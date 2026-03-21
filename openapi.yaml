@@ -1,0 +1,495 @@
+openapi: 3.0.3
+info:
+  title: Health Insurance Risk Classifier API
+  version: 0.1.0
+  description: |
+    Provides endpoints for service health, single risk prediction, and model metadata.
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+tags:
+  - name: health
+  - name: metadata
+  - name: training
+  - name: evaluations
+  - name: applicants
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      summary: Health check
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: ok
+                service: health-insurance-risk-classifier
+                version: 0.1.0
+
+  /v1/evaluations/risk:
+    post:
+      tags: [evaluations]
+      summary: Evaluate insurance risk for an individual
+      operationId: createRiskEvaluation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskEvaluationRequest'
+            example:
+              age: 42
+              sex: male
+              bmi: 31.2
+              children: 2
+              smoker: 'no'
+              region: southeast
+      responses:
+        '200':
+          description: Risk evaluation generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskEvaluationResponse'
+              example:
+                evaluation_id: 9e3f50f8-66d1-4bf2-b5c8-33f8d0319c6d
+                risk_category: Medium
+                model_version: rule-v1
+                created_at: '2026-03-21T12:00:00Z'
+        '400':
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: bad_request
+                message: children must be between 0 and 10
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: validation_error
+                message: bmi is required
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: internal_error
+                message: unexpected error while generating risk evaluation
+
+  /v1/training/run:
+    post:
+      tags: [training]
+      summary: Run model training
+      operationId: runTraining
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainingRunRequest'
+            example:
+              epochs: 200
+      responses:
+        '200':
+          description: Training completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingRunResponse'
+              example:
+                run_id: f2ab7f22-f2ad-4bd1-a653-157dd0f14a2b
+                status: completed
+                epochs: 200
+                model_version: nn-v1
+                started_at: '2026-03-21T12:00:00Z'
+                finished_at: '2026-03-21T12:03:00Z'
+
+  /v1/training/status:
+    get:
+      tags: [training]
+      summary: Get latest training status
+      operationId: getTrainingStatus
+      responses:
+        '200':
+          description: Latest training status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingStatusResponse'
+              example:
+                run_id: f2ab7f22-f2ad-4bd1-a653-157dd0f14a2b
+                status: completed
+                epochs: 200
+                model_version: nn-v1
+                started_at: '2026-03-21T12:00:00Z'
+                finished_at: '2026-03-21T12:03:00Z'
+                last_error: null
+
+  /v1/metadata/model:
+    get:
+      tags: [metadata]
+      summary: Get active model metadata
+      operationId: getModelMetadata
+      responses:
+        '200':
+          description: Active model metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelMetadataResponse'
+              example:
+                model_name: health-insurance-risk-classifier
+                model_version: rule-v1
+                labels:
+                  - Low
+                  - Medium
+                  - High
+                features:
+                  - age
+                  - sex
+                  - bmi
+                  - children
+                  - smoker
+                  - region
+                updated_at: '2026-03-21T12:00:00Z'
+
+  /v1/applicants:
+    get:
+      tags: [applicants]
+      summary: List applicants
+      operationId: listApplicants
+      responses:
+        '200':
+          description: Applicant list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApplicantResponse'
+    post:
+      tags: [applicants]
+      summary: Create applicant
+      operationId: createApplicant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicantCreate'
+            example:
+              first_name: Jane
+              last_name: Doe
+              email: jane.doe@example.com
+              age: 29
+      responses:
+        '201':
+          description: Applicant created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicantResponse'
+        '409':
+          description: Duplicate email
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: conflict
+                message: applicant with this email already exists
+
+  /v1/applicants/{applicant_id}:
+    parameters:
+      - $ref: '#/components/parameters/ApplicantId'
+    get:
+      tags: [applicants]
+      summary: Get applicant by id
+      operationId: getApplicant
+      responses:
+        '200':
+          description: Applicant detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicantResponse'
+        '404':
+          description: Applicant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [applicants]
+      summary: Update applicant
+      operationId: updateApplicant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicantUpdate'
+      responses:
+        '200':
+          description: Applicant updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicantResponse'
+        '404':
+          description: Applicant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Duplicate email
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [applicants]
+      summary: Delete applicant
+      operationId: deleteApplicant
+      responses:
+        '204':
+          description: Applicant deleted
+        '404':
+          description: Applicant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  parameters:
+    ApplicantId:
+      name: applicant_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, service, version]
+      properties:
+        status:
+          type: string
+          example: ok
+        service:
+          type: string
+          example: health-insurance-risk-classifier
+        version:
+          type: string
+          example: 0.1.0
+
+    RiskEvaluationRequest:
+      type: object
+      required: [age, sex, bmi, children, smoker, region]
+      additionalProperties: false
+      properties:
+        age:
+          type: integer
+          minimum: 18
+          maximum: 120
+        sex:
+          $ref: '#/components/schemas/Sex'
+        bmi:
+          type: number
+          format: float
+          minimum: 10
+          maximum: 70
+        children:
+          type: integer
+          minimum: 0
+          maximum: 10
+        smoker:
+          $ref: '#/components/schemas/SmokerStatus'
+        region:
+          $ref: '#/components/schemas/Region'
+
+    RiskEvaluationResponse:
+      type: object
+      required: [evaluation_id, risk_category, model_version, created_at]
+      properties:
+        evaluation_id:
+          type: string
+          format: uuid
+        risk_category:
+          $ref: '#/components/schemas/RiskCategory'
+        model_version:
+          type: string
+          example: rule-v1
+        created_at:
+          type: string
+          format: date-time
+
+    TrainingRunRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        epochs:
+          type: integer
+          minimum: 1
+          maximum: 5000
+          default: 200
+
+    TrainingRunResponse:
+      type: object
+      required: [run_id, status, epochs, model_version, started_at, finished_at]
+      properties:
+        run_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [completed]
+        epochs:
+          type: integer
+        model_version:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        finished_at:
+          type: string
+          format: date-time
+
+    TrainingStatusResponse:
+      type: object
+      required: [status]
+      properties:
+        run_id:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          type: string
+          example: idle
+        epochs:
+          type: integer
+          nullable: true
+        model_version:
+          type: string
+          nullable: true
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        finished_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_error:
+          type: string
+          nullable: true
+
+    ModelMetadataResponse:
+      type: object
+      required: [model_name, model_version, labels, features, updated_at]
+      properties:
+        model_name:
+          type: string
+        model_version:
+          type: string
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskCategory'
+        features:
+          type: array
+          items:
+            type: string
+        updated_at:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+
+    ApplicantBase:
+      type: object
+      required: [first_name, last_name, email, age]
+      additionalProperties: false
+      properties:
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email:
+          type: string
+          format: email
+        age:
+          type: integer
+          minimum: 0
+          maximum: 120
+
+    ApplicantCreate:
+      allOf:
+        - $ref: '#/components/schemas/ApplicantBase'
+
+    ApplicantUpdate:
+      allOf:
+        - $ref: '#/components/schemas/ApplicantBase'
+
+    ApplicantResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApplicantBase'
+        - type: object
+          required: [id, created_at, updated_at]
+          properties:
+            id:
+              type: integer
+              minimum: 1
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+
+    RiskCategory:
+      type: string
+      enum: [Low, Medium, High]
+
+    Sex:
+      type: string
+      enum: [male, female]
+
+    SmokerStatus:
+      type: string
+      enum: ['yes', 'no']
+
+    Region:
+      type: string
+      enum: [northeast, northwest, southeast, southwest]
+
