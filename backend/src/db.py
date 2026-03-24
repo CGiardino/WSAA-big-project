@@ -1,4 +1,6 @@
 import os
+import tempfile
+from pathlib import Path
 
 from mssql_python import connect
 
@@ -72,7 +74,7 @@ def get_connection():
 def _seed_health_insurance_data_if_empty() -> None:
     # Lazy import avoids circular dependency between db <-> classifier/repositories.
     from src.health_insurance_risk_classifier import build_dataset, persist_dataset
-    from src.storage.data_resolver import DataFileResolver
+    from src.storage.repository import StorageRepository
     
     conn = get_connection()
     try:
@@ -88,9 +90,14 @@ def _seed_health_insurance_data_if_empty() -> None:
             if row_count > 0:
                 return  # Table already populated
         
-        # Load CSV from local path or blob storage and populate table
+        # Download CSV from Azure Blob Storage and populate table
         try:
-            data_path = DataFileResolver().resolve()
+            storage = StorageRepository()
+            temp_dir = Path(tempfile.mkdtemp(prefix="wsaa-seed-"))
+            data_blob_name = "data/health_insurance_data.csv"
+            data_path = temp_dir / "health_insurance_data.csv"
+            
+            storage.download_file(data_blob_name, data_path)
             df = build_dataset(data_path)
             persist_dataset(df)
         except FileNotFoundError:
