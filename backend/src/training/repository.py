@@ -21,6 +21,7 @@ class TrainingRepository:
             "status",
             "epochs",
             "model_version",
+            "classification_report",
             "started_at",
             "finished_at",
             "last_error",
@@ -43,6 +44,7 @@ class TrainingRepository:
                 str(run_status.get("status")),
                 run_status.get("epochs"),
                 run_status.get("model_version"),
+                run_status.get("classification_report"),
                 _as_db_timestamp(run_status.get("started_at")),
                 _as_db_timestamp(run_status.get("finished_at")),
                 run_status.get("last_error"),
@@ -57,6 +59,7 @@ class TrainingRepository:
                         status = ?,
                         epochs = ?,
                         model_version = ?,
+                        classification_report = ?,
                         started_at = ?,
                         finished_at = ?,
                         last_error = ?
@@ -69,6 +72,7 @@ class TrainingRepository:
                         params[4],
                         params[5],
                         params[6],
+                        params[7],
                         params[0],
                     ),
                 )
@@ -84,11 +88,12 @@ class TrainingRepository:
                             status,
                             epochs,
                             model_version,
+                            classification_report,
                             started_at,
                             finished_at,
                             last_error
                         )
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                         params,
                     )
@@ -99,7 +104,7 @@ class TrainingRepository:
             with conn.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT TOP 1 run_id, status, epochs, model_version, started_at, finished_at, last_error
+                    SELECT TOP 1 run_id, status, epochs, model_version, classification_report, started_at, finished_at, last_error
                     FROM training_runs
                     ORDER BY started_at DESC
                     """
@@ -112,7 +117,7 @@ class TrainingRepository:
             with conn.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT TOP 1 run_id, status, epochs, model_version, started_at, finished_at, last_error
+                    SELECT TOP 1 run_id, status, epochs, model_version, classification_report, started_at, finished_at, last_error
                     FROM training_runs
                     WHERE run_id = ?
                     """,
@@ -172,7 +177,6 @@ class TrainingRepository:
                             [{bmi_column}] AS bmi,
                             [{children_column}] AS children,
                             [smoker],
-                            [region],
                             [charges_original],
                             [risk_category]
                         FROM [health_insurance_with_risk]
@@ -193,9 +197,8 @@ class TrainingRepository:
                 "bmi": row[2],
                 "children": row[3],
                 "smoker": row[4],
-                "region": row[5],
-                "charges_original": row[6],
-                "risk_category": row[7],
+                "charges_original": row[5],
+                "risk_category": row[6],
             }
             for key in ("age", "children"):
                 value = row_data.get(key)

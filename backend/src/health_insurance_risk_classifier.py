@@ -4,7 +4,7 @@
 - clean data
 - encode categories
 - normalize numeric features (while preserving originals)
-- apply rule-based risk classification
+- apply charges-based risk classification
 - persist results to Azure SQL (via StatisticsRepository and TrainingRepository)
 """
 
@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import io
 import json
+import logging
 import re
 import tempfile
 from pathlib import Path
@@ -37,6 +38,13 @@ RISK_LABELS = ["Low", "Medium", "High"]
 MODEL_BLOB_NAME = "models/risk_model.keras"
 MODEL_REGISTRY_BLOB_NAME = "models/model_registry.json"
 PLOTS_BLOB_PREFIX = "plots"
+
+logger = logging.getLogger(__name__)
+
+
+def _ordered_risk_crosstab(series: pd.Series, risk_series: pd.Series) -> pd.DataFrame:
+    """Return a crosstab with stable Low/Medium/High columns, even when some are missing."""
+    return pd.crosstab(series, risk_series).reindex(columns=RISK_LABELS, fill_value=0)
 
 
 def _default_model_path() -> Path:
@@ -141,37 +149,26 @@ def get_active_nn_model_info(base_model_path: Path | None = None) -> tuple[str |
     return model_version, _download_model_blob(storage, active_blob_name, temp_dir)
 
 
-def classify_risk(row: pd.Series) -> str:
-    """Classify insurance risk based on notebook-compatible scoring rules."""
-    risk_score = 0.0
+def _risk_from_charges_bmi(charges: pd.Series, bmi: pd.Series | None = None) -> pd.Series:
+    """Assign Low/Medium/High risk from charges with BMI as a secondary signal."""
+    numeric_charges = pd.Series(pd.to_numeric(charges, errors="coerce"), index=charges.index)
+    if numeric_charges.isna().all():
+        raise ValueError("Cannot derive risk_category: charges column has no numeric values")
 
-    if row["age"] > 0.7:
-        risk_score += 4
-    elif row["age"] > 0.4:
-        risk_score += 2
-    elif row["age"] > 0.2:
-        risk_score += 1
+    charge_rank = numeric_charges.fillna(numeric_charges.median()).rank(pct=True, method="average")
+    label_score = charge_rank
 
-    if row["bmi"] > 0.7:
-        risk_score += 4
-    elif row["bmi"] > 0.5:
-        risk_score += 2
-    elif row["bmi"] > 0.3:
-        risk_score += 1
+    # Keep charges dominant while allowing BMI to influence class boundaries.
+    if bmi is not None:
+        numeric_bmi = pd.Series(pd.to_numeric(bmi, errors="coerce"), index=charges.index)
+        if numeric_bmi.notna().any() and numeric_bmi.nunique(dropna=True) > 1:
+            bmi_rank = numeric_bmi.fillna(numeric_bmi.median()).rank(pct=True, method="average")
+            label_score = 0.8 * charge_rank + 0.2 * bmi_rank
 
-    if row["smoker"] == "yes":
-        risk_score += 5
-
-    if row["children"] >= 3:
-        risk_score += 1
-    elif row["children"] >= 1:
-        risk_score += 0.5
-
-    if risk_score >= 7:
-        return "High"
-    if risk_score >= 4:
-        return "Medium"
-    return "Low"
+    # Rank once to make bin edges deterministic, then split into Low/Medium/High.
+    unique_score = label_score.rank(method="first")
+    labels = pd.qcut(unique_score, q=3, labels=RISK_LABELS)
+    return pd.Series(labels, index=label_score.index).astype(str)
 
 
 def evaluate_risk_from_nn_raw_features(
@@ -185,7 +182,9 @@ def evaluate_risk_from_nn_raw_features(
     model_path: Path,
 ) -> str:
     """Evaluate one applicant with the trained neural network model."""
-    if bmi < 10 or bmi > 70:
+
+    bmi_value = float(bmi)
+    if bmi_value < 10.0 or bmi_value > 70.0:
         return "High"
 
     reference = pd.read_csv(data_path, usecols=["age", "bmi", "children"])
@@ -318,7 +317,7 @@ def build_dataset(data_path: Path) -> pd.DataFrame:
         else:
             df[col] = (df[col] - min_val) / (max_val - min_val)
 
-    df["risk_category"] = df.apply(classify_risk, axis=1)
+    df["risk_category"] = _risk_from_charges_bmi(df["charges_original"], df["bmi_original"])
     return df
 
 
@@ -355,21 +354,44 @@ def load_analysis_data() -> pd.DataFrame:
     return repository.load_analysis_data()
 
 
+def _plot_crosstab_or_placeholder(
+    table: pd.DataFrame,
+    ax: plt.Axes,
+    *,
+    colors: list[str],
+    empty_message: str = "No data available",
+) -> None:
+    """Plot crosstab as a bar chart, or draw a placeholder when the table has no rows."""
+    if table.empty:
+        ax.text(0.5, 0.5, empty_message, ha="center", va="center")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        return
+    table.plot(kind="bar", ax=ax, color=colors)
+
+
 def run_eda(df_analysis: pd.DataFrame, plot_dir: Path) -> None:
     _ = plot_dir
     storage = StorageRepository()
     plt.style.use("default")
     sns.set_palette("husl")
 
-    risk_order = ["Low", "Medium", "High"]
+    if df_analysis.empty:
+        logger.warning("EDA received empty analysis dataframe; generating placeholder plots where needed")
+
+    risk_order = RISK_LABELS
     risk_colors = ["green", "orange", "red"]
 
     # 01 Age
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
     axes[0].hist(df_analysis["age"], bins=30, color="skyblue", edgecolor="black", alpha=0.7)
     axes[0].set_title("Distribution of Age (Normalized)")
+    axes[0].set_xlabel("Age (Normalized)")
+    axes[0].set_ylabel("Count")
     sns.boxplot(data=df_analysis, x="risk_category", y="age", ax=axes[1], order=risk_order)
     axes[1].set_title("Age Distribution by Risk Category")
+    axes[1].set_xlabel("Risk Category")
+    axes[1].set_ylabel("Age (Normalized)")
     plt.tight_layout()
     _upload_current_figure(storage, "01_age_distribution.png")
     plt.close()
@@ -378,8 +400,12 @@ def run_eda(df_analysis: pd.DataFrame, plot_dir: Path) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
     axes[0].hist(df_analysis["bmi"], bins=30, color="skyblue", edgecolor="black", alpha=0.7)
     axes[0].set_title("Distribution of BMI (Normalized)")
+    axes[0].set_xlabel("BMI (Normalized)")
+    axes[0].set_ylabel("Count")
     sns.boxplot(data=df_analysis, x="risk_category", y="bmi", ax=axes[1], order=risk_order)
     axes[1].set_title("BMI Distribution by Risk Category")
+    axes[1].set_xlabel("Risk Category")
+    axes[1].set_ylabel("BMI (Normalized)")
     plt.tight_layout()
     _upload_current_figure(storage, "02_bmi_distribution.png")
     plt.close()
@@ -390,8 +416,12 @@ def run_eda(df_analysis: pd.DataFrame, plot_dir: Path) -> None:
         df_analysis["charges_original"], bins=30, color="skyblue", edgecolor="black", alpha=0.7
     )
     axes[0].set_title("Distribution of Insurance Charges")
+    axes[0].set_xlabel("Insurance Charges (USD)")
+    axes[0].set_ylabel("Count")
     sns.boxplot(data=df_analysis, x="risk_category", y="charges_original", ax=axes[1], order=risk_order)
     axes[1].set_title("Medical Charges by Risk Category")
+    axes[1].set_xlabel("Risk Category")
+    axes[1].set_ylabel("Insurance Charges")
     plt.tight_layout()
     _upload_current_figure(storage, "03_charges_distribution.png")
     plt.close()
@@ -401,9 +431,13 @@ def run_eda(df_analysis: pd.DataFrame, plot_dir: Path) -> None:
     smoker_counts = df_analysis["smoker"].value_counts()
     axes[0].bar(smoker_counts.index, smoker_counts.values, color=["lightblue", "salmon"])
     axes[0].set_title("Distribution of Smoker Status")
-    smoker_risk = pd.crosstab(df_analysis["smoker"], df_analysis["risk_category"])
-    smoker_risk[risk_order].plot(kind="bar", ax=axes[1], color=risk_colors)
+    axes[0].set_xlabel("Smoker Status")
+    axes[0].set_ylabel("Count")
+    smoker_risk = _ordered_risk_crosstab(df_analysis["smoker"], df_analysis["risk_category"])
+    _plot_crosstab_or_placeholder(smoker_risk, axes[1], colors=risk_colors)
     axes[1].set_title("Risk Category by Smoker Status")
+    axes[1].set_xlabel("Smoker Status")
+    axes[1].set_ylabel("Count")
     plt.tight_layout()
     _upload_current_figure(storage, "04_smoker_analysis.png")
     plt.close()
@@ -413,29 +447,18 @@ def run_eda(df_analysis: pd.DataFrame, plot_dir: Path) -> None:
     sex_counts = df_analysis["sex"].value_counts()
     axes[0].bar(sex_counts.index, sex_counts.values, color=["lightblue", "pink"])
     axes[0].set_title("Distribution of Sex")
-    sex_risk = pd.crosstab(df_analysis["sex"], df_analysis["risk_category"])
-    sex_risk[risk_order].plot(kind="bar", ax=axes[1], color=risk_colors)
+    axes[0].set_xlabel("Sex")
+    axes[0].set_ylabel("Count")
+    sex_risk = _ordered_risk_crosstab(df_analysis["sex"], df_analysis["risk_category"])
+    _plot_crosstab_or_placeholder(sex_risk, axes[1], colors=risk_colors)
     axes[1].set_title("Risk Category by Sex")
+    axes[1].set_xlabel("Sex")
+    axes[1].set_ylabel("Count")
     plt.tight_layout()
     _upload_current_figure(storage, "05_sex_analysis.png")
     plt.close()
 
-    # 06 Region
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-    region_counts = df_analysis["region"].value_counts().sort_index()
-    axes[0].bar(region_counts.index, region_counts.values)
-    axes[0].set_title("Distribution of Regions")
-    axes[0].tick_params(axis="x", rotation=45)
-    region_risk = pd.crosstab(df_analysis["region"], df_analysis["risk_category"])
-    region_risk[risk_order].plot(kind="bar", ax=axes[1], color=risk_colors)
-    axes[1].set_title("Risk Category by Region")
-    axes[1].tick_params(axis="x", rotation=45)
-    plt.tight_layout()
-    _upload_current_figure(storage, "06_region_analysis.png")
-    plt.close()
-
-    # 07 Children
-
+    # 06 Children
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
     children_counts = df_analysis["children_original"].value_counts().sort_index()
     x_positions = range(len(children_counts))
@@ -443,38 +466,51 @@ def run_eda(df_analysis: pd.DataFrame, plot_dir: Path) -> None:
     axes[0].set_title("Distribution of Number of Children")
     axes[0].set_xticks(list(x_positions))
     axes[0].set_xticklabels([str(int(v)) for v in children_counts.index])
-    children_risk = pd.crosstab(df_analysis["children_original"], df_analysis["risk_category"])
-    children_risk[risk_order].plot(kind="bar", ax=axes[1], color=risk_colors)
+    axes[0].set_xlabel("Number of Children")
+    axes[0].set_ylabel("Count")
+    children_risk = _ordered_risk_crosstab(df_analysis["children_original"], df_analysis["risk_category"])
+    _plot_crosstab_or_placeholder(children_risk, axes[1], colors=risk_colors)
     axes[1].set_title("Risk Category by Number of Children")
+    axes[1].set_xlabel("Number of Children")
+    axes[1].set_ylabel("Count")
     plt.tight_layout()
-    _upload_current_figure(storage, "07_children_analysis.png")
+    _upload_current_figure(storage, "06_children_analysis.png")
     plt.close()
 
-    # 08 Risk distribution
+    # 07 Risk distribution
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-    risk_counts = df_analysis["risk_category"].value_counts().reindex(risk_order)
+    risk_counts = df_analysis["risk_category"].value_counts().reindex(risk_order, fill_value=0)
     axes[0].bar(risk_counts.index, risk_counts.values, color=risk_colors)
     axes[0].set_title("Distribution of Risk Categories")
-    axes[1].pie(risk_counts.values, labels=risk_counts.index, autopct="%1.1f%%", colors=risk_colors)
+    axes[0].set_xlabel("Risk Category")
+    axes[0].set_ylabel("Count")
+    if int(risk_counts.sum()) > 0:
+        axes[1].pie(risk_counts.values, labels=risk_counts.index, autopct="%1.1f%%", colors=risk_colors)
+    else:
+        axes[1].text(0.5, 0.5, "No risk data", ha="center", va="center")
+        axes[1].axis("off")
     axes[1].set_title("Risk Category Proportions")
     plt.tight_layout()
-    _upload_current_figure(storage, "08_risk_category_distribution.png")
+    _upload_current_figure(storage, "07_risk_category_distribution.png")
     plt.close()
 
-    # 09 Correlation
+    # 08 Correlation
     numeric_features = ["age", "bmi", "children", "sex_encoded", "smoker_encoded", "charges_original"]
     correlation_matrix = df_analysis[numeric_features].copy().corr()
     fig, ax = plt.subplots(figsize=(10, 8))
     sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", center=0, fmt=".3f", ax=ax)
     ax.set_title("Correlation Matrix of Health Insurance Features")
+    ax.set_xlabel("Features")
+    ax.set_ylabel("Features")
     plt.tight_layout()
-    _upload_current_figure(storage, "09_correlation_matrix.png")
+    _upload_current_figure(storage, "08_correlation_matrix.png")
     plt.close()
 
     print("EDA completed. Plots uploaded to Azure Blob storage.")
 
 
-def run_training(plot_dir: Path, epochs: int) -> str:
+def run_training(plot_dir: Path, epochs: int) -> tuple[str, str]:
+    logger.info("Starting training run (epochs=%s, plot_dir=%s)", epochs, plot_dir)
     # Load training data via repository
     repository = TrainingRepository()
     df_model_data = repository.load_training_data()
@@ -540,23 +576,32 @@ def run_training(plot_dir: Path, epochs: int) -> str:
     risk_order = ["Low", "Medium", "High"]
 
     precision, recall, f1, _ = precision_recall_fscore_support(y_test, y_pred, labels=[0, 1, 2])
-    overall_accuracy = np.mean(y_test == y_pred)
-
+    report_text = classification_report(
+        y_test,
+        y_pred,
+        labels=[0, 1, 2],
+        target_names=risk_order,
+        zero_division=0,
+    )
     print(f"Training completed at epoch {len(history.history['accuracy'])}")
-    print(f"Overall Accuracy: {overall_accuracy:.4f} ({overall_accuracy * 100:.2f}%)")
-    print(classification_report(y_test, y_pred, target_names=risk_order, zero_division=0))
+    print(report_text)
 
     _ = plot_dir
     storage = StorageRepository()
 
     # 10 Confusion matrix
-    cm = confusion_matrix(y_test, y_pred)
-    cm_normalized = cm.astype(float) / cm.sum(axis=1)[:, np.newaxis]
+    cm = confusion_matrix(y_test, y_pred, labels=[0, 1, 2])
+    row_sums = cm.sum(axis=1, keepdims=True)
+    cm_normalized = np.divide(cm.astype(float), row_sums, out=np.zeros_like(cm, dtype=float), where=row_sums != 0)
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=risk_order, yticklabels=risk_order, ax=axes[0])
     axes[0].set_title("Confusion Matrix (Counts)")
+    axes[0].set_xlabel("Predicted Label")
+    axes[0].set_ylabel("True Label")
     sns.heatmap(cm_normalized, annot=True, fmt=".1%", cmap="Blues", xticklabels=risk_order, yticklabels=risk_order, ax=axes[1], vmin=0, vmax=1)
     axes[1].set_title("Confusion Matrix (Percentages)")
+    axes[1].set_xlabel("Predicted Label")
+    axes[1].set_ylabel("True Label")
     plt.tight_layout()
     _upload_current_figure(storage, "10_confusion_matrix.png")
     plt.close()
@@ -568,6 +613,8 @@ def run_training(plot_dir: Path, epochs: int) -> str:
         axes[idx].bar(risk_order, metric_values, color=["green", "orange", "red"], edgecolor="black", alpha=0.7)
         axes[idx].set_title(f"{metric_name} by Risk")
         axes[idx].set_ylim([0, 1.1])
+        axes[idx].set_xlabel("Risk Category")
+        axes[idx].set_ylabel(metric_name)
     plt.tight_layout()
     _upload_current_figure(storage, "11_per_risk_performance.png")
     plt.close()
@@ -587,7 +634,7 @@ def run_training(plot_dir: Path, epochs: int) -> str:
 
     print("Training evaluation plots uploaded to Azure Blob storage.")
     print(f"Trained model saved to: {versioned_model_path}")
-    return model_version
+    return model_version, report_text
 
 
 def parse_args() -> argparse.Namespace:
@@ -649,9 +696,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
