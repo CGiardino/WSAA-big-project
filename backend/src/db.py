@@ -1,6 +1,7 @@
 import os
 import tempfile
 from pathlib import Path
+import time
 
 from mssql_python import connect
 
@@ -76,9 +77,30 @@ def get_connection():
     if connect is None:
         raise ImportError("mssql-python is required for Azure SQL backend.")
 
-    conn = connect(_get_connection_string())
-    conn.setautocommit(True)
-    return conn
+    max_retries = 5
+    delay_seconds = 8
+    last_exception = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            conn = connect(_get_connection_string())
+            conn.setautocommit(True)
+            return conn
+        except RuntimeError as e:
+            # Azure SQL paused/timeout error detection (ODBC 258 or similar)
+            if "Timeout error [258]" in str(e) or "timeout" in str(e).lower():
+                print(f"[DB] Connection attempt {attempt} failed due to timeout/paused state. Retrying in {delay_seconds} seconds...")
+                last_exception = e
+                time.sleep(delay_seconds)
+            else:
+                raise
+        except OSError as e:
+            # Some drivers may raise OSError for network/timeout
+            print(f"[DB] Connection attempt {attempt} failed due to OSError. Retrying in {delay_seconds} seconds...")
+            last_exception = e
+            time.sleep(delay_seconds)
+    # All retries failed
+    print(f"[DB] All {max_retries} connection attempts failed. Raising last exception.")
+    raise last_exception if last_exception else RuntimeError("Failed to connect to Azure SQL after retries.")
 
 def _seed_health_insurance_data_if_empty() -> None:
     # Lazy import avoids circular dependency between db <-> classifier/repositories.
