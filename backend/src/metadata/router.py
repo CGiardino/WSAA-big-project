@@ -28,7 +28,7 @@ def get_model_metadata(
         model_name="health-insurance-risk-classifier",
         model_version=model_version,
         labels=[RiskCategory.Low, RiskCategory.Medium, RiskCategory.High],
-        features=["age", "sex", "bmi", "children", "smoker", "region", "charges_original"],
+        features=["age", "sex", "bmi", "children", "smoker"],
         updated_at=datetime.now(UTC),
     )
 

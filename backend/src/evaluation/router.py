@@ -29,7 +29,6 @@ def create_risk_evaluation(
             children=payload.children,
             smoker=payload.smoker.value,
             sex=payload.sex.value,
-            region=payload.region.value,
         )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

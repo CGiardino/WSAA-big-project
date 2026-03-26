@@ -8,6 +8,8 @@ from src.storage.repository import StorageRepository
 class EvaluationRepository:
     """DAO service for risk evaluation operations."""
 
+    _DEFAULT_REGION = "southeast"
+
     def __init__(self) -> None:
         self.storage = StorageRepository()
 
@@ -18,7 +20,6 @@ class EvaluationRepository:
         children: int,
         smoker: str,
         sex: str,
-        region: str,
     ) -> tuple[str, str]:
         """
         Evaluate risk category for an applicant.
@@ -44,7 +45,7 @@ class EvaluationRepository:
             children=children,
             smoker=smoker,
             sex=sex,
-            region=region,
+            region=self._DEFAULT_REGION,
             data_path=data_path,
             model_path=model_path,
         )

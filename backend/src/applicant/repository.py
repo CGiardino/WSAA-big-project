@@ -8,6 +8,8 @@ from src.db import get_connection
 from src.health_insurance_risk_classifier import evaluate_risk_with_best_model
 from src.storage.repository import StorageRepository
 
+DEFAULT_REGION = "southeast"
+
 
 def _enum_or_raw(value: object) -> object:
     return getattr(value, "value", value)
@@ -26,7 +28,6 @@ def _row_to_applicant(row: dict | list) -> dict:
         "bmi": _pick("bmi", 3),
         "children": _pick("children", 4),
         "smoker": _pick("smoker", 5),
-        "region": _pick("region", 6),
         "created_at": _pick("created_at", 7),
         "updated_at": _pick("updated_at", 8),
     }
@@ -74,7 +75,7 @@ class ApplicantRepository:
             children=payload.children,
             smoker=str(_enum_or_raw(payload.smoker)),
             sex=str(_enum_or_raw(payload.sex)),
-            region=str(_enum_or_raw(payload.region)),
+            region=DEFAULT_REGION,
             data_path=data_path,
             model_path=model_path,
         )
@@ -129,7 +130,7 @@ class ApplicantRepository:
                     FROM applicant_evaluations
                     WHERE applicant_id = a.id
                 )
-            ORDER BY a.id ASC
+            ORDER BY a.id DESC
             OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
             """
             params = (offset, limit)
@@ -198,7 +199,7 @@ class ApplicantRepository:
                         payload.bmi,
                         payload.children,
                         _enum_or_raw(payload.smoker),
-                        _enum_or_raw(payload.region),
+                        DEFAULT_REGION,
                         now,
                         now,
                     ),
@@ -258,7 +259,7 @@ class ApplicantRepository:
                         payload.bmi,
                         payload.children,
                         _enum_or_raw(payload.smoker),
-                        _enum_or_raw(payload.region),
+                        DEFAULT_REGION,
                         now,
                         applicant_id,
                     ),

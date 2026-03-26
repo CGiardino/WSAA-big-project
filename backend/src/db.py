@@ -44,10 +44,19 @@ BEGIN
         status NVARCHAR(32) NOT NULL,
         epochs INT,
         model_version NVARCHAR(32),
+        classification_report NVARCHAR(MAX),
         started_at NVARCHAR(32),
         finished_at NVARCHAR(32),
         last_error NVARCHAR(255)
     )
+END
+'''
+
+ALTER_TRAINING_RUNS_ADD_CLASSIFICATION_REPORT_SQL = '''
+IF COL_LENGTH('training_runs', 'classification_report') IS NULL
+BEGIN
+    ALTER TABLE training_runs
+    ADD classification_report NVARCHAR(MAX) NULL
 END
 '''
 
@@ -117,6 +126,7 @@ def ensure_schema_on_startup() -> None:
             cursor.execute(CREATE_APPLICANTS_SQL)
             cursor.execute(CREATE_EVALUATIONS_SQL)
             cursor.execute(CREATE_TRAINING_RUNS_SQL)
+            cursor.execute(ALTER_TRAINING_RUNS_ADD_CLASSIFICATION_REPORT_SQL)
     finally:
         conn.close()
     

@@ -51,7 +51,6 @@ paths:
               bmi: 31.2
               children: 2
               smoker: 'no'
-              region: southeast
       responses:
         '200':
           description: Risk evaluation generated successfully
@@ -311,7 +310,6 @@ paths:
               bmi: 31.2
               children: 2
               smoker: 'no'
-              region: southeast
       responses:
         '201':
           description: Applicant created
@@ -428,7 +426,7 @@ components:
 
     RiskEvaluationRequest:
       type: object
-      required: [age, sex, bmi, children, smoker, region]
+      required: [age, sex, bmi, children, smoker]
       additionalProperties: false
       properties:
         age:
@@ -446,8 +444,6 @@ components:
           maximum: 10
         smoker:
           $ref: '#/components/schemas/SmokerStatus'
-        region:
-          $ref: '#/components/schemas/Region'
 
     RiskEvaluationResponse:
       type: object
@@ -477,7 +473,7 @@ components:
 
     TrainingRunResponse:
       type: object
-      required: [run_id, status, epochs, model_version, started_at, finished_at]
+      required: [run_id, status, epochs, model_version, started_at, finished_at, classification_report]
       properties:
         run_id:
           type: string
@@ -495,6 +491,8 @@ components:
         finished_at:
           type: string
           format: date-time
+        classification_report:
+          type: string
 
     TrainingStatusResponse:
       type: object
@@ -524,10 +522,13 @@ components:
         last_error:
           type: string
           nullable: true
+        classification_report:
+          type: string
+          nullable: true
 
     TrainingDatasetRow:
       type: object
-      required: [sex, smoker, region, risk_category]
+      required: [sex, smoker, risk_category]
       properties:
         age:
           type: integer
@@ -542,8 +543,6 @@ components:
           type: integer
           nullable: true
         smoker:
-          type: string
-        region:
           type: string
         charges_original:
           type: number
@@ -668,7 +667,7 @@ components:
 
     ApplicantBase:
       type: object
-      required: [age, sex, bmi, children, smoker, region]
+      required: [age, sex, bmi, children, smoker]
       additionalProperties: false
       properties:
         age:
@@ -686,8 +685,6 @@ components:
           maximum: 10
         smoker:
           $ref: '#/components/schemas/SmokerStatus'
-        region:
-          $ref: '#/components/schemas/Region'
 
     ApplicantCreate:
       allOf:
@@ -775,7 +772,4 @@ components:
       type: string
       enum: ['yes', 'no']
 
-    Region:
-      type: string
-      enum: [northeast, northwest, southeast, southwest]
 
