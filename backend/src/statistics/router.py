@@ -8,6 +8,13 @@ from src.generated.openapi_models import (
     StatisticsRiskCount,
     StatisticsSummaryResponse,
 )
+from src.generated.server_stubs.apis.statistics_api_base import BaseStatisticsApi
+from src.generated.server_stubs.models.statistics_plots_response import (
+    StatisticsPlotsResponse as StubStatisticsPlotsResponse,
+)
+from src.generated.server_stubs.models.statistics_summary_response import (
+    StatisticsSummaryResponse as StubStatisticsSummaryResponse,
+)
 from src.statistics.repository import StatisticsRepository
 
 router = APIRouter(prefix="/v1", tags=["statistics"])
@@ -64,4 +71,18 @@ def get_statistics_plot(
         raise HTTPException(status_code=404, detail=str(e)) from e
 
     return FileResponse(plot_path)
+
+
+class StatisticsApiImpl(BaseStatisticsApi):
+    async def get_statistics_plot(self, plot_name: str) -> bytes:
+        return get_statistics_plot(plot_name, get_statistics_repository())  # type: ignore[return-value]
+
+    async def get_statistics_summary(self) -> StubStatisticsSummaryResponse:
+        response = get_statistics_summary(get_statistics_repository())
+        return StubStatisticsSummaryResponse.model_validate(response.model_dump())
+
+    async def list_statistics_plots(self) -> StubStatisticsPlotsResponse:
+        response = list_statistics_plots(get_statistics_repository())
+        return StubStatisticsPlotsResponse.model_validate(response.model_dump())
+
 

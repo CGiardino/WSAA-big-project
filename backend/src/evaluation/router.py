@@ -8,6 +8,13 @@ from src.generated.openapi_models import (
     RiskEvaluationRequest,
     RiskEvaluationResponse,
 )
+from src.generated.server_stubs.apis.evaluations_api_base import BaseEvaluationsApi
+from src.generated.server_stubs.models.risk_evaluation_request import (
+    RiskEvaluationRequest as StubRiskEvaluationRequest,
+)
+from src.generated.server_stubs.models.risk_evaluation_response import (
+    RiskEvaluationResponse as StubRiskEvaluationResponse,
+)
 from src.evaluation.repository import EvaluationRepository
 
 router = APIRouter(prefix="/v1", tags=["evaluations"])
@@ -41,6 +48,16 @@ def create_risk_evaluation(
         model_version=model_version,
         created_at=now,
     )
+
+
+class EvaluationsApiImpl(BaseEvaluationsApi):
+    async def create_risk_evaluation(
+        self,
+        risk_evaluation_request: StubRiskEvaluationRequest,
+    ) -> StubRiskEvaluationResponse:
+        payload = RiskEvaluationRequest.model_validate(risk_evaluation_request.model_dump())
+        response = create_risk_evaluation(payload, get_evaluation_repository())
+        return StubRiskEvaluationResponse.model_validate(response.model_dump())
 
 
 

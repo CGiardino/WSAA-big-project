@@ -7,6 +7,13 @@ from src.generated.openapi_models import (
     ModelMetadataResponse,
     RiskCategory,
 )
+from src.generated.server_stubs.apis.metadata_api_base import BaseMetadataApi
+from src.generated.server_stubs.models.model_availability_response import (
+    ModelAvailabilityResponse as StubModelAvailabilityResponse,
+)
+from src.generated.server_stubs.models.model_metadata_response import (
+    ModelMetadataResponse as StubModelMetadataResponse,
+)
 from src.metadata.repository import MetadataRepository
 
 router = APIRouter(prefix="/v1", tags=["metadata"])
@@ -53,5 +60,15 @@ def get_model_availability(
         active_model_version=active_version,
         active_model_path=str(active_path) if active_path is not None else None,
     )
+
+
+class MetadataApiImpl(BaseMetadataApi):
+    async def get_model_availability(self) -> StubModelAvailabilityResponse:
+        response = get_model_availability(get_metadata_repository())
+        return StubModelAvailabilityResponse.model_validate(response.model_dump())
+
+    async def get_model_metadata(self) -> StubModelMetadataResponse:
+        response = get_model_metadata(get_metadata_repository())
+        return StubModelMetadataResponse.model_validate(response.model_dump())
 
 

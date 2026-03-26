@@ -14,6 +14,19 @@ from src.generated.openapi_models import (
     TrainingRunResponse,
     TrainingStatusResponse,
 )
+from src.generated.server_stubs.apis.training_api_base import BaseTrainingApi
+from src.generated.server_stubs.models.training_dataset_list_response import (
+    TrainingDatasetListResponse as StubTrainingDatasetListResponse,
+)
+from src.generated.server_stubs.models.training_run_request import (
+    TrainingRunRequest as StubTrainingRunRequest,
+)
+from src.generated.server_stubs.models.training_run_response import (
+    TrainingRunResponse as StubTrainingRunResponse,
+)
+from src.generated.server_stubs.models.training_status_response import (
+    TrainingStatusResponse as StubTrainingStatusResponse,
+)
 from src.health_insurance_risk_classifier import (
     build_dataset,
     load_analysis_data,
@@ -222,4 +235,39 @@ def list_training_dataset(
         total=total,
         has_more=offset + len(items) < total,
     )
+
+
+class TrainingApiImpl(BaseTrainingApi):
+    async def get_training_status(self) -> StubTrainingStatusResponse:
+        response = get_training_status(get_training_repository())
+        return StubTrainingStatusResponse.model_validate(response.model_dump(mode="json"))
+
+    async def get_training_status_by_run_id(self, run_id) -> StubTrainingStatusResponse:
+        response = get_training_status_by_run_id(str(run_id), get_training_repository())
+        return StubTrainingStatusResponse.model_validate(response.model_dump(mode="json"))
+
+    async def list_training_dataset(
+        self,
+        limit: int | None,
+        offset: int | None,
+    ) -> StubTrainingDatasetListResponse:
+        response = list_training_dataset(
+            limit=limit if limit is not None else 25,
+            offset=offset if offset is not None else 0,
+            repository=get_training_repository(),
+        )
+        return StubTrainingDatasetListResponse.model_validate(response.model_dump(mode="json"))
+
+    async def run_training(
+        self,
+        training_run_request: StubTrainingRunRequest | None,
+    ) -> StubTrainingRunResponse:
+        payload = (
+            TrainingRunRequest.model_validate(training_run_request.model_dump())
+            if training_run_request is not None
+            else None
+        )
+        response = run_training_job(payload, get_training_repository())
+        return StubTrainingRunResponse.model_validate(response.model_dump(mode="json"))
+
 
