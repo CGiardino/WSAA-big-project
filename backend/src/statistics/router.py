@@ -15,20 +15,20 @@ from src.generated.server_stubs.models.statistics_plots_response import (
 from src.generated.server_stubs.models.statistics_summary_response import (
     StatisticsSummaryResponse as StubStatisticsSummaryResponse,
 )
-from src.statistics.repository import StatisticsRepository
+from src.statistics.dao import StatisticsDAO
 
 router = APIRouter(prefix="/v1", tags=["statistics"])
 
 
-def get_statistics_repository() -> StatisticsRepository:
-    return StatisticsRepository()
+def get_statistics_dao() -> StatisticsDAO:
+    return StatisticsDAO()
 
 
 @router.get("/statistics/summary", response_model=StatisticsSummaryResponse)
 def get_statistics_summary(
-    repository: StatisticsRepository = Depends(get_statistics_repository),
+    dao: StatisticsDAO = Depends(get_statistics_dao),
 ) -> StatisticsSummaryResponse:
-    summary = repository.get_summary_statistics()
+    summary = dao.get_summary_statistics()
 
     risk_distribution = [
         StatisticsRiskCount(
@@ -53,36 +53,31 @@ def get_statistics_summary(
 
 @router.get("/statistics/plots", response_model=StatisticsPlotsResponse)
 def list_statistics_plots(
-    repository: StatisticsRepository = Depends(get_statistics_repository),
+    dao: StatisticsDAO = Depends(get_statistics_dao),
 ) -> StatisticsPlotsResponse:
-    plots = repository.list_plots()
-    items = [StatisticsPlotItem(name=p["name"], url=p["url"]) for p in plots]
+    items = [StatisticsPlotItem(**item) for item in dao.list_plots()]
     return StatisticsPlotsResponse(items=items)
 
 
 @router.get("/statistics/plots/{plot_name}")
 def get_statistics_plot(
     plot_name: str,
-    repository: StatisticsRepository = Depends(get_statistics_repository),
+    dao: StatisticsDAO = Depends(get_statistics_dao),
 ) -> FileResponse:
-    try:
-        plot_path = repository.get_plot_path(plot_name)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
-
+    plot_path = dao.get_plot_path(plot_name)
+    if not plot_path.exists():
+        raise HTTPException(status_code=404, detail="Plot not found")
     return FileResponse(plot_path)
 
 
 class StatisticsApiImpl(BaseStatisticsApi):
-    async def get_statistics_plot(self, plot_name: str) -> bytes:
-        return get_statistics_plot(plot_name, get_statistics_repository())  # type: ignore[return-value]
-
     async def get_statistics_summary(self) -> StubStatisticsSummaryResponse:
-        response = get_statistics_summary(get_statistics_repository())
+        response = get_statistics_summary(get_statistics_dao())
         return StubStatisticsSummaryResponse.model_validate(response.model_dump())
 
     async def list_statistics_plots(self) -> StubStatisticsPlotsResponse:
-        response = list_statistics_plots(get_statistics_repository())
+        response = list_statistics_plots(get_statistics_dao())
         return StubStatisticsPlotsResponse.model_validate(response.model_dump())
 
-
+    async def get_statistics_plot(self, plot_name: str) -> FileResponse:
+        return get_statistics_plot(plot_name, get_statistics_dao())

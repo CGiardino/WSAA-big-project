@@ -14,21 +14,21 @@ from src.generated.server_stubs.models.model_availability_response import (
 from src.generated.server_stubs.models.model_metadata_response import (
     ModelMetadataResponse as StubModelMetadataResponse,
 )
-from src.metadata.repository import MetadataRepository
+from src.metadata.dao import MetadataDAO
 
 router = APIRouter(prefix="/v1", tags=["metadata"])
 
 
-def get_metadata_repository() -> MetadataRepository:
-    return MetadataRepository()
+def get_metadata_dao() -> MetadataDAO:
+    return MetadataDAO()
 
 
 @router.get("/metadata/model", response_model=ModelMetadataResponse)
 def get_model_metadata(
-    repository: MetadataRepository = Depends(get_metadata_repository),
+    dao: MetadataDAO = Depends(get_metadata_dao),
 ) -> ModelMetadataResponse:
     try:
-        model_version = repository.get_active_model_version()
+        model_version = dao.get_active_model_version()
     except (FileNotFoundError, ValueError) as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     return ModelMetadataResponse(
@@ -42,12 +42,12 @@ def get_model_metadata(
 
 @router.get("/metadata/model/availability", response_model=ModelAvailabilityResponse)
 def get_model_availability(
-    repository: MetadataRepository = Depends(get_metadata_repository),
+    dao: MetadataDAO = Depends(get_metadata_dao),
 ) -> ModelAvailabilityResponse:
     try:
-        artifact_exists = repository.check_artifact_exists()
-        artifact_loadable = repository.check_artifact_loadable()
-        active_version, active_path = repository.get_active_model_info()
+        artifact_exists = dao.check_artifact_exists()
+        artifact_loadable = dao.check_artifact_loadable()
+        active_version, active_path = dao.get_active_model_info()
     except (FileNotFoundError, ValueError):
         artifact_exists = False
         artifact_loadable = False
@@ -64,11 +64,10 @@ def get_model_availability(
 
 class MetadataApiImpl(BaseMetadataApi):
     async def get_model_availability(self) -> StubModelAvailabilityResponse:
-        response = get_model_availability(get_metadata_repository())
+        response = get_model_availability(get_metadata_dao())
         return StubModelAvailabilityResponse.model_validate(response.model_dump())
 
     async def get_model_metadata(self) -> StubModelMetadataResponse:
-        response = get_model_metadata(get_metadata_repository())
+        response = get_model_metadata(get_metadata_dao())
         return StubModelMetadataResponse.model_validate(response.model_dump())
-
 

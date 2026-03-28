@@ -30,9 +30,9 @@ from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.utils import to_categorical
 
-from src.statistics.repository import StatisticsRepository
-from src.storage.repository import StorageRepository
-from src.training.repository import TrainingRepository
+from src.statistics.dao import StatisticsDAO
+from src.storage.dao import StorageDAO
+from src.training.dao import TrainingDAO
 
 RISK_LABELS = ["Low", "Medium", "High"]
 MODEL_BLOB_NAME = "models/risk_model.keras"
@@ -51,7 +51,7 @@ def _default_model_path() -> Path:
     return Path(tempfile.gettempdir()) / "wsaa-model-cache" / MODEL_BLOB_NAME
 
 
-def _read_registry_payload(storage: StorageRepository) -> dict[str, object] | None:
+def _read_registry_payload(storage: StorageDAO) -> dict[str, object] | None:
     if not storage.exists(MODEL_REGISTRY_BLOB_NAME):
         return None
 
@@ -74,7 +74,7 @@ def _extract_version_number(model_version: str) -> int | None:
     return int(match.group(1))
 
 
-def _next_nn_model_version(storage: StorageRepository) -> str:
+def _next_nn_model_version(storage: StorageDAO) -> str:
     payload = _read_registry_payload(storage)
     if payload is None:
         return "nn-v1"
@@ -86,7 +86,7 @@ def _next_nn_model_version(storage: StorageRepository) -> str:
     return f"nn-v{current_number + 1}"
 
 
-def _write_active_model_registry(storage: StorageRepository, model_version: str, model_blob_name: str) -> None:
+def _write_active_model_registry(storage: StorageDAO, model_version: str, model_blob_name: str) -> None:
     payload = json.dumps(
         {
             "active_model_version": model_version,
@@ -96,7 +96,7 @@ def _write_active_model_registry(storage: StorageRepository, model_version: str,
     storage.upload_stream(io.BytesIO(payload.encode("utf-8")), MODEL_REGISTRY_BLOB_NAME, overwrite=True)
 
 
-def _download_model_blob(storage: StorageRepository, blob_name: str, destination_dir: Path) -> Path:
+def _download_model_blob(storage: StorageDAO, blob_name: str, destination_dir: Path) -> Path:
     if not storage.exists(blob_name):
         raise FileNotFoundError(f"Model blob not found: {blob_name}")
 
@@ -114,7 +114,7 @@ def _normalize_model_blob_name(blob_name: str) -> str:
     return normalized
 
 
-def _upload_current_figure(storage: StorageRepository, filename: str) -> None:
+def _upload_current_figure(storage: StorageDAO, filename: str) -> None:
     buffer = io.BytesIO()
     plt.savefig(buffer, dpi=100, bbox_inches="tight")
     buffer.seek(0)
@@ -123,7 +123,7 @@ def _upload_current_figure(storage: StorageRepository, filename: str) -> None:
 
 def get_active_nn_model_info(base_model_path: Path | None = None) -> tuple[str | None, Path | None]:
     resolved_base_path = base_model_path or _default_model_path()
-    storage = StorageRepository()
+    storage = StorageDAO()
     payload = _read_registry_payload(storage)
 
     if resolved_base_path.exists():
@@ -323,15 +323,15 @@ def build_dataset(data_path: Path) -> pd.DataFrame:
 
 def persist_dataset(df: pd.DataFrame) -> None:
     """Persist processed dataset to database via StatisticsRepository."""
-    repository = StatisticsRepository()
-    repository.persist_dataset(df)
+    dao = StatisticsDAO()
+    dao.persist_dataset(df)
 
 
 
 def run_sql_checks() -> None:
     """Execute diagnostic SQL checks via StatisticsRepository."""
-    repository = StatisticsRepository()
-    results = repository.run_sql_checks()
+    dao = StatisticsDAO()
+    results = dao.run_sql_checks()
     
     print("Query 1 - Total records:")
     print(f"  Total: {results['total_records']}")
@@ -350,8 +350,8 @@ def run_sql_checks() -> None:
 
 def load_analysis_data() -> pd.DataFrame:
     """Load analysis data via StatisticsRepository."""
-    repository = StatisticsRepository()
-    return repository.load_analysis_data()
+    dao = StatisticsDAO()
+    return dao.load_analysis_data()
 
 
 def _plot_crosstab_or_placeholder(
@@ -372,7 +372,7 @@ def _plot_crosstab_or_placeholder(
 
 def run_eda(df_analysis: pd.DataFrame, plot_dir: Path) -> None:
     _ = plot_dir
-    storage = StorageRepository()
+    storage = StorageDAO()
     plt.style.use("default")
     sns.set_palette("husl")
 
@@ -511,9 +511,9 @@ def run_eda(df_analysis: pd.DataFrame, plot_dir: Path) -> None:
 
 def run_training(plot_dir: Path, epochs: int) -> tuple[str, str]:
     logger.info("Starting training run (epochs=%s, plot_dir=%s)", epochs, plot_dir)
-    # Load training data via repository
-    repository = TrainingRepository()
-    df_model_data = repository.load_training_data()
+    # Load training data via DAO
+    dao = TrainingDAO()
+    df_model_data = dao.load_training_data()
 
     feature_cols = [
         "age",
@@ -587,7 +587,7 @@ def run_training(plot_dir: Path, epochs: int) -> tuple[str, str]:
     print(report_text)
 
     _ = plot_dir
-    storage = StorageRepository()
+    storage = StorageDAO()
 
     # 10 Confusion matrix
     cm = confusion_matrix(y_test, y_pred, labels=[0, 1, 2])

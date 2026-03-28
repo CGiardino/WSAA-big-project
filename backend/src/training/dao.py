@@ -10,7 +10,7 @@ def _connect():
     return get_connection()
 
 
-class TrainingRepository:
+class TrainingDAO:
     def __init__(self) -> None:
         pass
 
@@ -233,3 +233,4 @@ class TrainingRepository:
 
         df = pd.DataFrame.from_records([tuple(row) for row in rows], columns=columns)
         return df
+

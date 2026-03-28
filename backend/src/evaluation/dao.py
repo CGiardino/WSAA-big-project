@@ -2,16 +2,16 @@ import tempfile
 from pathlib import Path
 
 from src.health_insurance_risk_classifier import evaluate_risk_with_best_model
-from src.storage.repository import StorageRepository
+from src.storage.dao import StorageDAO
 
 
-class EvaluationRepository:
+class EvaluationDAO:
     """DAO service for risk evaluation operations."""
 
     _DEFAULT_REGION = "southeast"
 
     def __init__(self) -> None:
-        self.storage = StorageRepository()
+        self.storage = StorageDAO()
 
     def evaluate_risk(
         self,

@@ -15,22 +15,22 @@ from src.generated.server_stubs.models.risk_evaluation_request import (
 from src.generated.server_stubs.models.risk_evaluation_response import (
     RiskEvaluationResponse as StubRiskEvaluationResponse,
 )
-from src.evaluation.repository import EvaluationRepository
+from src.evaluation.dao import EvaluationDAO
 
 router = APIRouter(prefix="/v1", tags=["evaluations"])
 
 
-def get_evaluation_repository() -> EvaluationRepository:
-    return EvaluationRepository()
+def get_evaluation_dao() -> EvaluationDAO:
+    return EvaluationDAO()
 
 
 @router.post("/evaluations/risk", response_model=RiskEvaluationResponse)
 def create_risk_evaluation(
     payload: RiskEvaluationRequest,
-    repository: EvaluationRepository = Depends(get_evaluation_repository),
+    dao: EvaluationDAO = Depends(get_evaluation_dao),
 ) -> RiskEvaluationResponse:
     try:
-        risk_label, model_version = repository.evaluate_risk(
+        risk_label, model_version = dao.evaluate_risk(
             age=payload.age,
             bmi=payload.bmi,
             children=payload.children,
@@ -56,7 +56,7 @@ class EvaluationsApiImpl(BaseEvaluationsApi):
         risk_evaluation_request: StubRiskEvaluationRequest,
     ) -> StubRiskEvaluationResponse:
         payload = RiskEvaluationRequest.model_validate(risk_evaluation_request.model_dump())
-        response = create_risk_evaluation(payload, get_evaluation_repository())
+        response = create_risk_evaluation(payload, get_evaluation_dao())
         return StubRiskEvaluationResponse.model_validate(response.model_dump())
 
 

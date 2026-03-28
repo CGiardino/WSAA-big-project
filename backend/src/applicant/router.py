@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from src.applicant.repository import ApplicantRepository
+from src.applicant.dao import ApplicantDAO
 from src.applicant.schemas import (
     ApplicantCreate,
     ApplicantCreateResponse,
@@ -22,17 +22,17 @@ from src.generated.server_stubs.models.applicant_update import ApplicantUpdate a
 router = APIRouter(prefix="/v1/applicants", tags=["applicants"])
 
 
-def get_applicant_repository() -> ApplicantRepository:
-    return ApplicantRepository()
+def get_applicant_dao() -> ApplicantDAO:
+    return ApplicantDAO()
 
 
 @router.post("", response_model=ApplicantCreateResponse, status_code=status.HTTP_201_CREATED)
 def create_applicant(
     payload: ApplicantCreate,
-    repository: ApplicantRepository = Depends(get_applicant_repository),
+    dao: ApplicantDAO = Depends(get_applicant_dao),
 ) -> ApplicantCreateResponse:
     try:
-        applicant = repository.create_applicant(payload)
+        applicant = dao.create_applicant(payload)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return ApplicantCreateResponse.model_validate(applicant)
@@ -42,12 +42,12 @@ def create_applicant(
 def list_applicants(
     limit: int = Query(default=25, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
-    repository: ApplicantRepository = Depends(get_applicant_repository),
+    dao: ApplicantDAO = Depends(get_applicant_dao),
 ) -> ApplicantListResponse:
-    total = repository.count_applicants()
+    total = dao.count_applicants()
     items = [
         ApplicantResponse.model_validate(p)
-        for p in repository.list_applicants(limit=limit, offset=offset)
+        for p in dao.list_applicants(limit=limit, offset=offset)
     ]
     return ApplicantListResponse(
         items=items,
@@ -61,9 +61,9 @@ def list_applicants(
 @router.get("/{applicant_id}", response_model=ApplicantResponse)
 def get_applicant(
     applicant_id: int,
-    repository: ApplicantRepository = Depends(get_applicant_repository),
+    dao: ApplicantDAO = Depends(get_applicant_dao),
 ) -> ApplicantResponse:
-    applicant = repository.get_applicant(applicant_id)
+    applicant = dao.get_applicant(applicant_id)
     if applicant is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Applicant not found")
     return ApplicantResponse.model_validate(applicant)
@@ -73,10 +73,10 @@ def get_applicant(
 def update_applicant(
     applicant_id: int,
     payload: ApplicantUpdate,
-    repository: ApplicantRepository = Depends(get_applicant_repository),
+    dao: ApplicantDAO = Depends(get_applicant_dao),
 ) -> ApplicantResponse:
     try:
-        applicant = repository.update_applicant(applicant_id, payload)
+        applicant = dao.update_applicant(applicant_id, payload)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     if applicant is None:
@@ -87,9 +87,9 @@ def update_applicant(
 @router.delete("/{applicant_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_applicant(
     applicant_id: int,
-    repository: ApplicantRepository = Depends(get_applicant_repository),
+    dao: ApplicantDAO = Depends(get_applicant_dao),
 ) -> None:
-    deleted = repository.delete_applicant(applicant_id)
+    deleted = dao.delete_applicant(applicant_id)
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Applicant not found")
 
@@ -100,15 +100,15 @@ class ApplicantsApiImpl(BaseApplicantsApi):
         applicant_create: StubApplicantCreate,
     ) -> StubApplicantCreateResponse:
         payload = ApplicantCreate.model_validate(applicant_create.model_dump())
-        response = create_applicant(payload, get_applicant_repository())
+        response = create_applicant(payload, get_applicant_dao())
         return StubApplicantCreateResponse.model_validate(response.model_dump())
 
     async def delete_applicant(self, applicant_id: int) -> None:
-        delete_applicant(applicant_id, get_applicant_repository())
+        delete_applicant(applicant_id, get_applicant_dao())
         return None
 
     async def get_applicant(self, applicant_id: int) -> StubApplicantResponse:
-        response = get_applicant(applicant_id, get_applicant_repository())
+        response = get_applicant(applicant_id, get_applicant_dao())
         return StubApplicantResponse.model_validate(response.model_dump())
 
     async def list_applicants(
@@ -119,7 +119,7 @@ class ApplicantsApiImpl(BaseApplicantsApi):
         response = list_applicants(
             limit=limit if limit is not None else 25,
             offset=offset if offset is not None else 0,
-            repository=get_applicant_repository(),
+            dao=get_applicant_dao(),
         )
         return StubApplicantListResponse.model_validate(response.model_dump())
 
@@ -129,7 +129,5 @@ class ApplicantsApiImpl(BaseApplicantsApi):
         applicant_update: StubApplicantUpdate,
     ) -> StubApplicantResponse:
         payload = ApplicantUpdate.model_validate(applicant_update.model_dump())
-        response = update_applicant(applicant_id, payload, get_applicant_repository())
+        response = update_applicant(applicant_id, payload, get_applicant_dao())
         return StubApplicantResponse.model_validate(response.model_dump())
-
-

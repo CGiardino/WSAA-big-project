@@ -7,7 +7,7 @@ from typing import BinaryIO
 from azure.storage.blob import BlobServiceClient
 
 
-class StorageRepository:
+class StorageDAO:
     """DAO service for Azure Blob container file operations."""
 
     def __init__(
@@ -101,4 +101,5 @@ class StorageRepository:
         source_name = self._blob_name(blob_name)
         blob_client = self._container_client.get_blob_client(source_name)
         blob_client.delete_blob(delete_snapshots="include")
+
 

@@ -6,7 +6,7 @@ from uuid import uuid4
 from src.applicant.schemas import ApplicantCreate, ApplicantUpdate
 from src.db import get_connection
 from src.health_insurance_risk_classifier import evaluate_risk_with_best_model
-from src.storage.repository import StorageRepository
+from src.storage.dao import StorageDAO
 
 DEFAULT_REGION = "southeast"
 
@@ -46,7 +46,7 @@ def _row_to_applicant(row: dict | list) -> dict:
     return applicant
 
 
-class ApplicantRepository:
+class ApplicantDAO:
     def __init__(self) -> None:
         pass
 
@@ -55,7 +55,7 @@ class ApplicantRepository:
 
     def _evaluate_applicant_payload(self, payload: ApplicantCreate | ApplicantUpdate) -> tuple[str, str]:
         try:
-            storage = StorageRepository()
+            storage = StorageDAO()
             temp_dir = Path(tempfile.mkdtemp(prefix="wsaa-applicant-"))
             
             data_blob_name = "data/health_insurance_data.csv"
@@ -292,4 +292,5 @@ class ApplicantRepository:
             
             conn.commit()
             return row_count > 0
+
 

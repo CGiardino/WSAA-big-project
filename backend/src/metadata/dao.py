@@ -4,7 +4,7 @@ from typing import Optional
 from src.health_insurance_risk_classifier import get_active_nn_model_info
 
 
-class MetadataRepository:
+class MetadataDAO:
     """DAO service for model metadata and availability operations."""
 
     def __init__(self) -> None:
@@ -43,4 +43,3 @@ class MetadataRepository:
             return True
         except Exception:
             return False
-

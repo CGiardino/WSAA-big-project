@@ -105,7 +105,7 @@ def get_connection():
 def _seed_health_insurance_data_if_empty() -> None:
     # Lazy import avoids circular dependency between db <-> classifier/repositories.
     from src.health_insurance_risk_classifier import build_dataset, persist_dataset
-    from src.storage.repository import StorageRepository
+    from src.storage.dao import StorageDAO
     
     conn = get_connection()
     try:
@@ -123,7 +123,7 @@ def _seed_health_insurance_data_if_empty() -> None:
         
         # Download CSV from Azure Blob Storage and populate table
         try:
-            storage = StorageRepository()
+            storage = StorageDAO()
             temp_dir = Path(tempfile.mkdtemp(prefix="wsaa-seed-"))
             data_blob_name = "data/health_insurance_data.csv"
             data_path = temp_dir / "health_insurance_data.csv"
@@ -154,5 +154,3 @@ def ensure_schema_on_startup() -> None:
     
     # Try to seed the analytics data table if CSV exists
     _seed_health_insurance_data_if_empty()
-
-

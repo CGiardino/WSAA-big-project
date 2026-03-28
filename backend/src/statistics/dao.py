@@ -6,16 +6,16 @@ import numpy as np
 import pandas as pd
 
 from src.db import get_connection
-from src.storage.repository import StorageRepository
+from src.storage.dao import StorageDAO
 
 PLOTS_BLOB_PREFIX = "plots"
 
 
-class StatisticsRepository:
+class StatisticsDAO:
     """DAO service for statistics and plot data operations."""
 
     def __init__(self) -> None:
-        self.storage = StorageRepository()
+        self.storage = StorageDAO()
 
     def get_summary_statistics(self) -> dict[str, Any]:
         """
@@ -274,3 +274,4 @@ class StatisticsRepository:
 
             df = pd.DataFrame.from_records([tuple(row) for row in rows], columns=columns)
             return df
+

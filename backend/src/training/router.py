@@ -34,22 +34,22 @@ from src.health_insurance_risk_classifier import (
     run_eda,
     run_training,
 )
-from src.storage.repository import StorageRepository
-from src.training.repository import TrainingRepository
+from src.storage.dao import StorageDAO
+from src.training.dao import TrainingDAO
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/v1", tags=["training"])
 
 
-def get_training_repository() -> TrainingRepository:
-    return TrainingRepository()
+def get_training_dao() -> TrainingDAO:
+    return TrainingDAO()
 
 
 @router.post("/training/run", response_model=TrainingRunResponse)
 def run_training_job(
     payload: TrainingRunRequest | None = None,
-    repository: TrainingRepository = Depends(get_training_repository),
+    dao: TrainingDAO = Depends(get_training_dao),
 ) -> TrainingRunResponse:
     req = payload or TrainingRunRequest(epochs=200)
     epochs = req.epochs or 200
@@ -59,8 +59,8 @@ def run_training_job(
     # Initialize storage and download data
     try:
         logger.info(f"Training run {run_id} started with epochs={epochs}")
-        storage = StorageRepository()
-        logger.info("StorageRepository initialized successfully")
+        storage = StorageDAO()
+        logger.info("StorageDAO initialized successfully")
         
         temp_dir = Path(tempfile.mkdtemp(prefix="wsaa-training-"))
         logger.info(f"Created temp directory: {temp_dir}")
@@ -102,7 +102,7 @@ def run_training_job(
     }
     
     try:
-        repository.save_run_status(run_status)
+        dao.save_run_status(run_status)
         logger.info(f"Saved initial run status for {run_id}")
     except Exception as exc:
         logger.error(f"Failed to save run status: {str(exc)}", exc_info=True)
@@ -148,7 +148,7 @@ def run_training_job(
             }
         )
         try:
-            repository.save_run_status(run_status)
+            dao.save_run_status(run_status)
             logger.info(f"Saved failed run status for {run_id}")
         except Exception as db_exc:
             logger.error(f"Failed to save error status: {str(db_exc)}", exc_info=True)
@@ -168,7 +168,7 @@ def run_training_job(
     )
     
     try:
-        repository.save_run_status(run_status)
+        dao.save_run_status(run_status)
         logger.info(f"Saved completed run status for {run_id}")
     except Exception as exc:
         logger.error(f"Failed to save completion status: {str(exc)}", exc_info=True)
@@ -188,9 +188,9 @@ def run_training_job(
 
 @router.get("/training/status", response_model=TrainingStatusResponse)
 def get_training_status(
-    repository: TrainingRepository = Depends(get_training_repository),
+    dao: TrainingDAO = Depends(get_training_dao),
 ) -> TrainingStatusResponse:
-    latest = repository.get_latest_run_status()
+    latest = dao.get_latest_run_status()
     if latest is None:
         return TrainingStatusResponse(
             run_id=None,
@@ -208,9 +208,9 @@ def get_training_status(
 @router.get("/training/status/{run_id}", response_model=TrainingStatusResponse)
 def get_training_status_by_run_id(
     run_id: str,
-    repository: TrainingRepository = Depends(get_training_repository),
+    dao: TrainingDAO = Depends(get_training_dao),
 ) -> TrainingStatusResponse:
-    run_status = repository.get_run_status_by_id(run_id)
+    run_status = dao.get_run_status_by_id(run_id)
     if run_status is None:
         raise HTTPException(status_code=404, detail="training run not found")
     return TrainingStatusResponse(**run_status)
@@ -220,9 +220,9 @@ def get_training_status_by_run_id(
 def list_training_dataset(
     limit: int = Query(default=25, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
-    repository: TrainingRepository = Depends(get_training_repository),
+    dao: TrainingDAO = Depends(get_training_dao),
 ) -> TrainingDatasetListResponse:
-    rows, total = repository.list_training_dataset(limit=limit, offset=offset)
+    rows, total = dao.list_training_dataset(limit=limit, offset=offset)
 
     items: list[TrainingDatasetRow] = []
     for row_data in rows:
@@ -239,11 +239,11 @@ def list_training_dataset(
 
 class TrainingApiImpl(BaseTrainingApi):
     async def get_training_status(self) -> StubTrainingStatusResponse:
-        response = get_training_status(get_training_repository())
+        response = get_training_status(get_training_dao())
         return StubTrainingStatusResponse.model_validate(response.model_dump(mode="json"))
 
     async def get_training_status_by_run_id(self, run_id) -> StubTrainingStatusResponse:
-        response = get_training_status_by_run_id(str(run_id), get_training_repository())
+        response = get_training_status_by_run_id(str(run_id), get_training_dao())
         return StubTrainingStatusResponse.model_validate(response.model_dump(mode="json"))
 
     async def list_training_dataset(
@@ -254,7 +254,7 @@ class TrainingApiImpl(BaseTrainingApi):
         response = list_training_dataset(
             limit=limit if limit is not None else 25,
             offset=offset if offset is not None else 0,
-            repository=get_training_repository(),
+            dao=get_training_dao(),
         )
         return StubTrainingDatasetListResponse.model_validate(response.model_dump(mode="json"))
 
@@ -267,7 +267,5 @@ class TrainingApiImpl(BaseTrainingApi):
             if training_run_request is not None
             else None
         )
-        response = run_training_job(payload, get_training_repository())
+        response = run_training_job(payload, get_training_dao())
         return StubTrainingRunResponse.model_validate(response.model_dump(mode="json"))
-
-

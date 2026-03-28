@@ -165,3 +165,4 @@ class AnalyticsRepository:
             df = pd.DataFrame.from_records([tuple(row) for row in rows], columns=columns)
             return df
 
+
