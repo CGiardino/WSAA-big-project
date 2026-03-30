@@ -2,132 +2,127 @@
 
 Health Insurance Risk Classifier platform with:
 - Angular frontend
-- Python FastAPI backend
-- SQL database
-- Azure deployment
+- Azure Entra ID is used for user authentication and authorization.
+- Python FastAPI backend (API server)
+- Azure SQL database for persistent storage accessed by DAOs
+- Azure Blob Storage for model artifacts and plots accessed by DAOs
 
-The platform evolves the original analytics prototype into a full web application with stable contracts, persistent storage, model-backed predictions, and cloud operations.
+Here a diagram of the system architecture:
 
-Current API domain naming uses insurance terminology:
-- `applicants` for applicant CRUD
-- `evaluations` for risk evaluation results
-- `training` for model training operations
+![Risk_Classifier_Arch.png](Risk_Classifier_Arch.png)
+
+The platform evolves the original analytics prototype into a full-stack web application with:
+- OpenAPI contracts
+- Persistent storage (SQL, Blob)
+- Model-backed predictions
+- Analytics and training workflows
+
+## Key Domain Naming
+- `applicants`: CRUD for applicant data
+- `evaluations`: risk evaluation endpoints
+- `training`: model training and status
+- `metadata`: model registry and version info
+- `statistics`: summary stats and plot endpoints
 
 ## Architecture Principles
-- API-first: `openapi.yaml` is the contract source of truth.
-- Contract-driven development: backend models/routes are generated from OpenAPI and then implemented.
-- Layered backend design: API, service, model adapter, repository.
-- Cloud-ready deployment: stateless API + managed SQL + managed hosting on Azure.
+- API-first: `backend/openapi.yaml` is the contract source of truth
+- Contract-driven: backend models/routes generated from OpenAPI
+- Layered backend: API, service, model adapter, repository
+- Cloud-ready: stateless API, managed SQL, managed hosting, blob storage
 
-## Target Tech Stack
-- Frontend: Angular
+## Tech Stack
+- Frontend: Angular (TypeScript)
 - Backend: Python FastAPI
-- API contract: OpenAPI 3 (`openapi.yaml`)
-- Persistence: Azure SQL-compatible engine locally via Docker, Azure SQL in cloud
-- Deployment platform: Azure
+- API contract: OpenAPI 3 (`backend/openapi.yaml`)
+- Persistence: Azure SQL (local via Docker, cloud via Azure)
+- Model/plot storage: Azure Blob Storage (local: filesystem)
+- Deployment: Azure Web App, Azure SQL, Azure Blob
 
 ## High-Level System Components
-1. Frontend (Angular)
-- Calls backend endpoints defined in `openapi.yaml`.
-- Uses generated API client types/services from the OpenAPI contract.
-- Provides forms, result views, and history/management views.
+1. **Frontend (Angular)**
+   - Runs in browser, calls backend endpoints from OpenAPI contract
+   - Uses generated API client
+   - Provides forms, results, management views
 
-2. API Layer (FastAPI)
-- Exposes REST endpoints for evaluations, metadata, training, health, and applicant data.
-- Enforces request/response validation against generated OpenAPI models.
-- Handles auth, errors, and HTTP semantics.
+2. **API Layer (FastAPI)**
+   - Exposes REST endpoints for all domains
+   - Validates requests/responses via generated OpenAPI models
+   - Handles auth, errors, HTTP semantics
 
-3. Application Service Layer
-- Coordinates business workflows (predict, persist, fetch, batch operations).
-- Applies domain rules and orchestrates model/repository calls.
-- Keeps route handlers thin and testable.
+3. **Service Layer**
+   - Orchestrates business logic (predict, persist, batch, training)
+   - Applies domain rules, coordinates model/repository
+   - Keeps route handlers thin
 
-4. Model Adapter Layer
-- Encapsulates risk-model loading and inference.
-- Supports versioned model artifacts and metadata retrieval.
-- Loads the active model for evaluation requests.
-- Isolated from API handlers so model changes do not break route contracts.
+4. **Model Adapter Layer**
+   - Loads and runs a risk model (TensorFlow/Keras)
+   - Supports versioned model artifacts (from Blob or local)
+   - Loads active model for evaluation
+   - Isolated from API handlers
 
-5. Data Access Layer (Repository)
-- Encapsulates SQL interactions for applicants, evaluations, training runs, and related entities.
-- Provides backend storage abstraction for local Dockerized Azure SQL and Azure SQL environments.
-- Manages schema boundaries, constraints, and query behavior.
+5. **Data Access Layer (Repository)**
+   - SQL operations for applicants, evaluations, training runs, analytics
+   - Abstracts storage for local and Azure SQL
+   - Manages schema, constraints, queries
 
-6. SQL Database
-- Stores applicant records, evaluation outputs, model metadata, training run metadata, and timestamps.
-- Supports reporting/history features and batch processing outputs.
+6. **SQL Database**
+   - Stores applicant records, evaluation results, model metadata, training runs, analytics
+   - Supports reporting/history, batch outputs
 
-7. Model Artifact Storage
-- Stores trained model files (versioned artifacts) in Azure Blob Storage.
-- Supports model upload after training and model download/cache for evaluation requests.
+7. **Model Registry & Artifact Storage**
+   - Model files (`risk_model*.keras`) and registry (`model_registry.json`) in Blob Storage (local: `backend/data/`)
+   - Plots and analytics outputs in Blob Storage (local: `backend/plots/`)
+   - Registry tracks model versions, metadata
 
-8. External Integration Layer
-- Imports applicant data from CSV files for batch training workflows.
-- Uses the same service layer and model adapter to keep logic consistent.
+8. **Analytics/Training Script**
+   - Python script (`health_insurance_risk_classifier.py`) for EDA, training, evaluation
+   - Loads data from CSV, trains model, saves artifacts/plots
+   - Used by API for training runs and batch analytics
 
-9. Observability and Operations
-- Health endpoints, structured logs, and error tracing.
-- Deployment pipeline for code generation, testing, and Azure release.
+9. **External Integration**
+   - Imports applicant data from CSV for batch training
+   - Uses service/model adapter for consistency
 
 ## Data Flows
 
 ### Single Evaluation Flow
-1. Angular sends evaluation input to FastAPI.
-2. FastAPI validates payload via generated OpenAPI schema models.
-3. Service layer loads or reuses active model artifact from Blob-backed model adapter.
-4. Service layer runs inference and persists request/result to SQL.
-5. API returns risk category and metadata to frontend.
+1. Angular sends evaluation input to FastAPI via `POST /v1/evaluations/risk`
+2. FastAPI validates the request via OpenAPI schema
+3. Service loads active model from Blob/local
+4. Service runs inference, persists request/result to SQL
+5. API returns risk category and metadata to frontend
 
 ### Training Run Flow
-1. Client calls `POST /v1/training/run` with optional training options (e.g., epochs).
-2. API starts training workflow and returns run metadata (including `run_id`).
-3. Training workflow prepares data and trains model.
-4. Trained model artifact is stored in Azure Blob Storage.
-5. Training status is available via `GET /v1/training/status`.
+1. Client starts training with `POST /v1/training/run`
+2. API starts training workflow, returns run metadata
+3. Training script loads data, trains model, saves artifact to Blob/local
+4. Model registry updated, status available via `GET /v1/training/status` and `GET /v1/training/status/{run_id}`
 
 ### Applicant CRUD Flow
-1. Angular calls applicant endpoints (`/v1/applicants`).
-2. FastAPI validates request bodies.
-3. Repository executes SQL operations.
-4. API returns created/read/updated/deleted results.
+- **List applicants:** `GET /v1/applicants`
+- **Create applicant:** `POST /v1/applicants`
+- **Get applicant by id:** `GET /v1/applicants/{applicant_id}`
+- **Update applicant:** `PUT /v1/applicants/{applicant_id}`
+- **Delete applicant:** `DELETE /v1/applicants/{applicant_id}`
 
-### Batch Integration Flow
-1. Applicant CSV file is uploaded or provided to the integration endpoint.
-2. Service validates and parses training records from the CSV.
-3. Service stores/versions the prepared training dataset metadata.
-4. Service triggers a training run using the imported batch data.
-5. Training run status and resulting model metadata are persisted and exposed via API.
+### Statistics & Plots Flow
+- **Get summary statistics:** `GET /v1/statistics/summary`
+- **List plot files:** `GET /v1/statistics/plots`
+- **Get plot image:** `GET /v1/statistics/plots/{plot_name}`
+- API loads summary from SQL, plot files from Blob/local
+- API returns stats and plot URLs or images to frontend
 
-## Data Domains (Core)
-- Applicants: identity/contact/demographic fields.
-- Evaluations: input features, evaluated risk category, model version, timestamp.
-- Model metadata: active model name/version and supported labels/features.
-- Training runs: run id, status, epochs, model version, timestamps, error details.
-- Batch jobs (planned): CSV training source reference, dataset version, run status, record counts, summary metrics.
+## Data Domains
+- Applicants: demographic fields
+- Evaluations: input, risk, model version, timestamp
+- Model metadata: version, labels, features
+- Training runs: run id, status, epochs, model version, timestamps, errors
+- Analytics/plots: summary stats, plot images
+- Model registry: tracks available model versions
 
-## Azure Deployment View
-- Angular app hosted on Azure web hosting service.
-- FastAPI app hosted on Azure compute service.
-- SQL hosted on Azure managed SQL service.
-- Model artifacts hosted in Azure Blob Storage.
-- CI/CD pipeline runs:
-  - dependency install
-  - OpenAPI code generation
-  - tests
-  - deployment to Azure environments
-
-## Local Development Environment
-- API runs locally with FastAPI.
-- SQL runs locally in Docker using an Azure SQL-compatible image (for parity with cloud SQL behavior).
-- Local training can keep run state in-memory for a single API instance.
-- For multi-instance/cloud reliability, training run status should be persisted in SQL and model artifacts in Blob.
-- Local configuration should mirror Azure connection settings where possible (host, port, credentials, database name).
-
-## Security and Access (Design-Level)
-- Authentication and authorization enforced at API boundary.
-- Secrets managed via Azure configuration/secret management.
-- Input validation and structured error responses enforced by schema.
-- Transport security via HTTPS.
-
-
-
+## Repository Path Map
+- API entry: `backend/src/main.py`
+- Routers: `backend/src/applicant/router.py`, etc.
+- Analytics: `backend/src/health_insurance_risk_classifier.py`
+- API contract: `backend/openapi.yaml`
+- Frontend: `frontend/src/`
