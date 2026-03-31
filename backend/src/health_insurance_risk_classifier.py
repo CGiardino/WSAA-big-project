@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-"""Script version of the health insurance risk classifier workflow.
-- load CSV
-- clean data
-- encode categories
-- normalize numeric features (while preserving originals)
-- apply charges-based risk classification
-- persist results to Azure SQL (via StatisticsRepository and TrainingRepository)
+"""
+Script version of the health insurance risk classifier workflow.
+Steps:
+    - load CSV
+    - clean data
+    - encode categories
+    - normalize numeric features (while preserving originals)
+    - apply charges-based risk classification
+    - persist results to Azure SQL (via StatisticsRepository and TrainingRepository)
 """
 
-from __future__ import annotations
+from __future__ import annotations  # For forward type references
 
+# Standard library imports
 import argparse
 import io
 import json
@@ -18,6 +21,7 @@ import re
 import tempfile
 from pathlib import Path
 
+# Data science and ML libraries
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -30,63 +34,66 @@ from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.utils import to_categorical
 
+# Project DAOs for database and storage
 from src.statistics.dao import StatisticsDAO
 from src.storage.dao import StorageDAO
 from src.training.dao import TrainingDAO
 
+# Risk category labels used throughout the workflow
 RISK_LABELS = ["Low", "Medium", "High"]
+# Default blob names for model and registry
 MODEL_BLOB_NAME = "models/risk_model.keras"
 MODEL_REGISTRY_BLOB_NAME = "models/model_registry.json"
 PLOTS_BLOB_PREFIX = "plots"
 
+# Logger for this module
 logger = logging.getLogger(__name__)
-
 
 def _ordered_risk_crosstab(series: pd.Series, risk_series: pd.Series) -> pd.DataFrame:
     """Return a crosstab with stable Low/Medium/High columns, even when some are missing."""
     return pd.crosstab(series, risk_series).reindex(columns=RISK_LABELS, fill_value=0)
 
-
 def _default_model_path() -> Path:
+    """Return the default local path for the model cache."""
     return Path(tempfile.gettempdir()) / "wsaa-model-cache" / MODEL_BLOB_NAME
 
-
 def _read_registry_payload(storage: StorageDAO) -> dict[str, object] | None:
+    """Read and decode the model registry JSON from blob storage."""
     if not storage.exists(MODEL_REGISTRY_BLOB_NAME):
         return None
-
     payload_bytes = storage.download_bytes(MODEL_REGISTRY_BLOB_NAME)
     return json.loads(payload_bytes.decode("utf-8"))
 
 
+
 def _versioned_model_path(base_model_path: Path, model_version: str) -> Path:
+    """Return a Path with the model version appended to the filename."""
     return base_model_path.with_name(f"{base_model_path.stem}_{model_version}{base_model_path.suffix}")
 
-
 def _versioned_model_blob_name(versioned_model_path: Path) -> str:
+    """Return the blob name for a versioned model file."""
     return f"models/{versioned_model_path.name}"
 
-
 def _extract_version_number(model_version: str) -> int | None:
+    """Extract the integer version from a model version string like 'nn-v3'."""
     match = re.fullmatch(r"nn-v(\d+)", model_version)
     if match is None:
         return None
     return int(match.group(1))
 
-
 def _next_nn_model_version(storage: StorageDAO) -> str:
+    """Compute the next neural network model version string."""
     payload = _read_registry_payload(storage)
     if payload is None:
         return "nn-v1"
-
     current_version = str(payload.get("active_model_version") or "")
     current_number = _extract_version_number(current_version)
     if current_number is None:
         raise ValueError("Invalid active_model_version in model registry")
     return f"nn-v{current_number + 1}"
 
-
 def _write_active_model_registry(storage: StorageDAO, model_version: str, model_blob_name: str) -> None:
+    """Write the active model version and path to the registry in blob storage."""
     payload = json.dumps(
         {
             "active_model_version": model_version,
@@ -95,17 +102,16 @@ def _write_active_model_registry(storage: StorageDAO, model_version: str, model_
     )
     storage.upload_stream(io.BytesIO(payload.encode("utf-8")), MODEL_REGISTRY_BLOB_NAME, overwrite=True)
 
-
 def _download_model_blob(storage: StorageDAO, blob_name: str, destination_dir: Path) -> Path:
+    """Download a model blob from storage to a local directory."""
     if not storage.exists(blob_name):
         raise FileNotFoundError(f"Model blob not found: {blob_name}")
-
     destination = destination_dir / Path(blob_name).name
     storage.download_file(blob_name, destination)
     return destination
 
-
 def _normalize_model_blob_name(blob_name: str) -> str:
+    """Ensure the blob name is in the correct 'models/...' format."""
     normalized = blob_name.strip()
     if not normalized:
         raise ValueError("Invalid model registry payload")

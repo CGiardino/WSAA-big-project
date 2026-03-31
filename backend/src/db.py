@@ -1,10 +1,14 @@
+
+# Standard library imports
 import os
 import tempfile
 from pathlib import Path
 import time
 
+# External dependency for Azure SQL connection
 from mssql_python import connect
 
+# SQL statement to create applicants table if it doesn't exist
 CREATE_APPLICANTS_SQL = '''
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='applicants' AND xtype='U')
 BEGIN
@@ -22,6 +26,7 @@ BEGIN
 END
 '''
 
+# SQL statement to create applicant_evaluations table if it doesn't exist
 CREATE_EVALUATIONS_SQL = '''
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='applicant_evaluations' AND xtype='U')
 BEGIN
@@ -37,6 +42,7 @@ BEGIN
 END
 '''
 
+# SQL statement to create training_runs table if it doesn't exist
 CREATE_TRAINING_RUNS_SQL = '''
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='training_runs' AND xtype='U')
 BEGIN
@@ -53,6 +59,7 @@ BEGIN
 END
 '''
 
+# SQL to add classification_report column if missing (for schema migration)
 ALTER_TRAINING_RUNS_ADD_CLASSIFICATION_REPORT_SQL = '''
 IF COL_LENGTH('training_runs', 'classification_report') IS NULL
 BEGIN
@@ -61,19 +68,19 @@ BEGIN
 END
 '''
 
-
 def get_db_backend():
+    """Return the type of DB backend in use (for future extensibility)."""
     return "azuresql"
 
-
 def _get_connection_string() -> str:
+    """Fetch the Azure SQL connection string from environment variable."""
     connection_string = os.getenv("WSAA_DB_CONNECTION_STRING")
     if not connection_string:
         raise ValueError("WSAA_DB_CONNECTION_STRING is required for Azure SQL backend.")
     return connection_string
 
-
 def get_connection():
+    """Establish a connection to Azure SQL with retry logic for transient errors."""
     if connect is None:
         raise ImportError("mssql-python is required for Azure SQL backend.")
 
@@ -103,6 +110,7 @@ def get_connection():
     raise last_exception if last_exception else RuntimeError("Failed to connect to Azure SQL after retries.")
 
 def _seed_health_insurance_data_if_empty() -> None:
+    """Populate analytics table from CSV if it exists and table is empty."""
     # Lazy import avoids circular dependency between db <-> classifier/repositories.
     from src.health_insurance_risk_classifier import build_dataset, persist_dataset
     from src.storage.dao import StorageDAO
@@ -140,8 +148,8 @@ def _seed_health_insurance_data_if_empty() -> None:
     finally:
         conn.close()
 
-
 def ensure_schema_on_startup() -> None:
+    """Ensure all required tables exist and seed analytics data if needed."""
     conn = get_connection()
     try:
         with conn.cursor() as cursor:
@@ -151,6 +159,5 @@ def ensure_schema_on_startup() -> None:
             cursor.execute(ALTER_TRAINING_RUNS_ADD_CLASSIFICATION_REPORT_SQL)
     finally:
         conn.close()
-    
     # Try to seed the analytics data table if CSV exists
     _seed_health_insurance_data_if_empty()
