@@ -27,6 +27,7 @@ class TrainingDAO:
             "last_error",
         ]
         if hasattr(row, "keys"):
+            # Support dict-like row objects from different SQL drivers.
             return {col: row[col] for col in columns}
         return {col: row[idx] for idx, col in enumerate(columns)}
 
@@ -187,6 +188,7 @@ class TrainingDAO:
                     )
                     rows = cursor.fetchall()
             except Exception:
+                # Keep the endpoint resilient when analytics table is not ready yet.
                 return [], 0
 
         result = []
@@ -203,6 +205,7 @@ class TrainingDAO:
             for key in ("age", "children"):
                 value = row_data.get(key)
                 if value is not None:
+                    # Normalize possible FLOAT/DECIMAL SQL values to API ints.
                     row_data[key] = int(round(float(value)))
             result.append(row_data)
 

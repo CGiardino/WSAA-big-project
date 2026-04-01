@@ -21,6 +21,7 @@ router = APIRouter(prefix="/v1", tags=["evaluations"])
 
 
 def get_evaluation_dao() -> EvaluationDAO:
+    # Keep dependency creation centralized for FastAPI injection and tests.
     return EvaluationDAO()
 
 
@@ -30,6 +31,7 @@ def create_risk_evaluation(
     dao: EvaluationDAO = Depends(get_evaluation_dao),
 ) -> RiskEvaluationResponse:
     try:
+        # Delegate model loading/inference concerns to the DAO layer.
         risk_label, model_version = dao.evaluate_risk(
             age=payload.age,
             bmi=payload.bmi,
@@ -43,6 +45,7 @@ def create_risk_evaluation(
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     now = datetime.now(UTC)
     return RiskEvaluationResponse(
+        # API contract expects a server-generated evaluation identifier per call.
         evaluation_id=uuid4(),
         risk_category=RiskCategory(risk_label),
         model_version=model_version,
@@ -55,9 +58,7 @@ class EvaluationsApiImpl(BaseEvaluationsApi):
         self,
         risk_evaluation_request: StubRiskEvaluationRequest,
     ) -> StubRiskEvaluationResponse:
+        # Bridge generated stub payloads into runtime Pydantic models.
         payload = RiskEvaluationRequest.model_validate(risk_evaluation_request.model_dump())
         response = create_risk_evaluation(payload, get_evaluation_dao())
         return StubRiskEvaluationResponse.model_validate(response.model_dump())
-
-
-

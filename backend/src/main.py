@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager  # For FastAPI lifespan events
 from fastapi import FastAPI  # Main FastAPI framework
 
 # Import routers to register endpoints (side-effect imports)
+# Domain router imports register Base*Api implementations at import time.
 import src.applicant.router
 import src.evaluation.router
 import src.health.router
@@ -22,6 +23,7 @@ from src.generated.server_stubs.apis.training_api import router as training_rout
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     """Run startup tasks (e.g., DB schema check) before serving requests."""
+    # Ensure SQL tables/migrations are ready before the first request is handled.
     ensure_schema_on_startup()
     yield
 
@@ -32,6 +34,7 @@ app = FastAPI(
     description="API for classifying health insurance risk based on applicant data, with endpoints for managing applicants, evaluating risk, retrieving model metadata, and running training jobs.",
     lifespan=lifespan,
 )
+# Generated routers expose the OpenAPI contract endpoints.
 # Register all routers for API endpoints
 app.include_router(health_router)
 app.include_router(applicants_router)
@@ -39,4 +42,3 @@ app.include_router(evaluations_router)
 app.include_router(metadata_router)
 app.include_router(statistics_router)
 app.include_router(training_router)
-

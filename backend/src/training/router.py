@@ -43,6 +43,7 @@ router = APIRouter(prefix="/v1", tags=["training"])
 
 
 def get_training_dao() -> TrainingDAO:
+    # Isolated factory helps dependency overrides in tests.
     return TrainingDAO()
 
 
@@ -52,6 +53,7 @@ def run_training_job(
     dao: TrainingDAO = Depends(get_training_dao),
 ) -> TrainingRunResponse:
     req = payload or TrainingRunRequest(epochs=200)
+    # Default to 200 epochs when caller omits payload or explicit value.
     epochs = req.epochs or 200
     run_id = uuid4()
     started_at = datetime.now(UTC)
@@ -148,6 +150,7 @@ def run_training_job(
             }
         )
         try:
+            # Persist failure state so `/training/status` remains informative.
             dao.save_run_status(run_status)
             logger.info(f"Saved failed run status for {run_id}")
         except Exception as db_exc:
@@ -192,6 +195,7 @@ def get_training_status(
 ) -> TrainingStatusResponse:
     latest = dao.get_latest_run_status()
     if latest is None:
+        # Stable idle payload when no run has ever been persisted.
         return TrainingStatusResponse(
             run_id=None,
             status="idle",
@@ -226,6 +230,7 @@ def list_training_dataset(
 
     items: list[TrainingDatasetRow] = []
     for row_data in rows:
+        # Validate each row against OpenAPI schema before returning it.
         items.append(TrainingDatasetRow.model_validate(row_data))
 
     return TrainingDatasetListResponse(

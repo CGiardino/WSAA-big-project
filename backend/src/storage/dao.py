@@ -41,6 +41,7 @@ class StorageDAO:
         clean_name = blob_name.strip("/")
         if not clean_name:
             raise ValueError("blob_name must not be empty")
+        # Apply optional global prefix so callers can use repo-relative keys.
         return f"{self.prefix}/{clean_name}" if self.prefix else clean_name
 
     def list_files(self, starts_with: str | None = None) -> list[str]:
@@ -51,6 +52,7 @@ class StorageDAO:
         for blob in blobs:
             name = str(blob.name)
             if self.prefix and name.startswith(self.prefix + "/"):
+                # Return logical names without configured tenant/project prefix.
                 name = name[len(self.prefix) + 1 :]
             items.append(name)
         return items
@@ -101,5 +103,4 @@ class StorageDAO:
         source_name = self._blob_name(blob_name)
         blob_client = self._container_client.get_blob_client(source_name)
         blob_client.delete_blob(delete_snapshots="include")
-
 

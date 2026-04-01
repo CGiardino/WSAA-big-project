@@ -55,6 +55,7 @@ class StatisticsDAO:
                 if not table_columns:
                     raise ValueError("health_insurance_with_risk table has no columns")
 
+                # Pick columns defensively because historical tables may differ.
                 age_column = "age_original" if "age_original" in table_columns else "age"
                 bmi_column = "bmi_original" if "bmi_original" in table_columns else "bmi"
 
@@ -88,6 +89,7 @@ class StatisticsDAO:
 
         risk_counts = {"Low": 0, "Medium": 0, "High": 0}
         for row in risk_rows:
+            # Ignore unknown labels so API payload remains schema-compatible.
             label = str(row[0])
             if label in risk_counts:
                 risk_counts[label] = int(row[1])
@@ -112,6 +114,7 @@ class StatisticsDAO:
         items = []
         plot_blobs = sorted(self.storage.list_files(starts_with=f"{PLOTS_BLOB_PREFIX}/"))
         for blob_name in plot_blobs:
+            # Public plot URLs are based on filename, not full blob key.
             file_name = Path(blob_name).name
             if Path(file_name).suffix.lower() not in ALLOWED_PLOT_SUFFIXES:
                 continue
@@ -145,6 +148,7 @@ class StatisticsDAO:
 
         temp_dir = Path(tempfile.mkdtemp(prefix="wsaa-plot-"))
         plot_path = temp_dir / plot_name
+        # Download to temp storage so FastAPI can stream via FileResponse.
         self.storage.download_file(blob_name, plot_path)
 
         return plot_path

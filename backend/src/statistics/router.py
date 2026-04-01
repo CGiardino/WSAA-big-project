@@ -30,6 +30,7 @@ def get_statistics_summary(
 ) -> StatisticsSummaryResponse:
     summary = dao.get_summary_statistics()
 
+    # Keep risk labels ordered/stable for frontend charts.
     risk_distribution = [
         StatisticsRiskCount(
             risk_category=RiskCategory.Low, count=summary["risk_distribution"]["Low"]
@@ -64,6 +65,7 @@ def get_statistics_plot(
     plot_name: str,
     dao: StatisticsDAO = Depends(get_statistics_dao),
 ) -> FileResponse:
+    # The DAO validates file names and downloads the blob to a temp file path.
     plot_path = dao.get_plot_path(plot_name)
     if not plot_path.exists():
         raise HTTPException(status_code=404, detail="Plot not found")

@@ -28,6 +28,7 @@ def get_model_metadata(
     dao: MetadataDAO = Depends(get_metadata_dao),
 ) -> ModelMetadataResponse:
     try:
+        # Resolve currently active model version from blob-backed registry.
         model_version = dao.get_active_model_version()
     except (FileNotFoundError, ValueError) as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
@@ -45,10 +46,12 @@ def get_model_availability(
     dao: MetadataDAO = Depends(get_metadata_dao),
 ) -> ModelAvailabilityResponse:
     try:
+        # Combine existence/load checks so UI can distinguish broken artifacts.
         artifact_exists = dao.check_artifact_exists()
         artifact_loadable = dao.check_artifact_loadable()
         active_version, active_path = dao.get_active_model_info()
     except (FileNotFoundError, ValueError):
+        # Return a stable "unavailable" payload instead of surfacing internal details.
         artifact_exists = False
         artifact_loadable = False
         active_version = None
@@ -70,4 +73,3 @@ class MetadataApiImpl(BaseMetadataApi):
     async def get_model_metadata(self) -> StubModelMetadataResponse:
         response = get_model_metadata(get_metadata_dao())
         return StubModelMetadataResponse.model_validate(response.model_dump())
-

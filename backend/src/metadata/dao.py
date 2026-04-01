@@ -12,6 +12,7 @@ class MetadataDAO:
 
     def get_active_model_version(self) -> str:
         """Get the active model version from Azure model registry."""
+        # The registry lookup also validates that an active model path is usable.
         active_version, _ = get_active_nn_model_info()
         if not active_version:
             raise ValueError("Active model not available")
@@ -38,6 +39,7 @@ class MetadataDAO:
             return False
 
         try:
+            # Load test catches corrupt/incompatible model files early.
             from tensorflow import keras
             keras.models.load_model(active_path)
             return True

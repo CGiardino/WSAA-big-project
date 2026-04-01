@@ -11,6 +11,7 @@ class EvaluationDAO:
     _DEFAULT_REGION = "southeast"
 
     def __init__(self) -> None:
+        # Reuse one storage client per DAO instance.
         self.storage = StorageDAO()
 
     def evaluate_risk(
@@ -27,7 +28,7 @@ class EvaluationDAO:
         Returns:
             Tuple of (risk_label, model_version)
         """
-        # Download data and model from Azure Blob Storage to temp directory
+        # Download model artifacts to a per-request temp directory.
         temp_dir = Path(tempfile.mkdtemp(prefix="wsaa-eval-"))
         
         data_blob_name = "data/health_insurance_data.csv"
@@ -36,6 +37,7 @@ class EvaluationDAO:
         data_path = temp_dir / "health_insurance_data.csv"
         model_path = temp_dir / "risk_model.keras"
         
+        # Materialize dataset/model locally because TensorFlow expects file paths.
         self.storage.download_file(data_blob_name, data_path)
         self.storage.download_file(model_blob_name, model_path)
 
