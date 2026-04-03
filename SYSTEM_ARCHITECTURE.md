@@ -9,7 +9,7 @@ Health Insurance Risk Classifier platform with:
 
 Here a diagram of the system architecture:
 
-![Risk_Classifier_Arch.png](Risk_Classifier_Arch.png)
+![Risk_Classifier_Arch.png](./Risk_Classifier_Arch.png)
 
 The platform evolves the original analytics prototype into a full-stack web application with:
 - OpenAPI contracts
