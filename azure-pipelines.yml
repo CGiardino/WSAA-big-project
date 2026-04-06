@@ -13,10 +13,10 @@ variables:
   dockerfilePath: 'backend/Dockerfile'
   buildContext: 'backend'
   imageTag: '$(Build.BuildId)'
+  dockerRegistryServiceConnection: 'RiskClassifier'
+  azureServiceConnection: 'RiskClassifierResourceManager'
+  acrLoginServer: 'riskclassifier.azurecr.io'
   # Set these in Azure DevOps variables (or a variable group).
-  # dockerRegistryServiceConnection: '<service-connection-name>'
-  # azureServiceConnection: '<azure-rm-service-connection-name>'
-  # acrLoginServer: '<your-acr-name>.azurecr.io'
   # resourceGroup: '<your-resource-group>'
   # containerAppName: '<your-container-app-name>'
   # azureStaticWebAppsApiToken: '<secret-token>'
