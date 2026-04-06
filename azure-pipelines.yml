@@ -6,6 +6,21 @@
 trigger:
 - main
 
+variables:
+  python.version: '3.11'
+  node.version: '20.x'
+  imageRepository: 'wsaa-backend'
+  dockerfilePath: 'backend/Dockerfile'
+  buildContext: 'backend'
+  imageTag: '$(Build.BuildId)'
+  # Set these in Azure DevOps variables (or a variable group).
+  # dockerRegistryServiceConnection: '<service-connection-name>'
+  # azureServiceConnection: '<azure-rm-service-connection-name>'
+  # acrLoginServer: '<your-acr-name>.azurecr.io'
+  # resourceGroup: '<your-resource-group>'
+  # containerAppName: '<your-container-app-name>'
+  # azureStaticWebAppsApiToken: '<secret-token>'
+
 pool:
   vmImage: ubuntu-latest
 
@@ -22,8 +37,8 @@ steps:
 
 - task: NodeTool@0
   inputs:
-    versionSpec: '20.x'
-  displayName: 'Use Node.js 20.x'
+    versionSpec: '$(node.version)'
+  displayName: 'Use Node.js $(node.version)'
 
 - script: |
     python -m pip install --upgrade pip
@@ -51,4 +66,38 @@ steps:
     cd frontend
     npm run build
   displayName: 'Build frontend'
+
+- task: Docker@2
+  displayName: 'Build and push backend image'
+  inputs:
+    containerRegistry: '$(dockerRegistryServiceConnection)'
+    repository: '$(imageRepository)'
+    command: 'buildAndPush'
+    Dockerfile: '$(dockerfilePath)'
+    buildContext: '$(buildContext)'
+    tags: |
+      $(imageTag)
+      latest
+
+- task: AzureCLI@2
+  displayName: 'Deploy backend to Azure Container App'
+  inputs:
+    azureSubscription: '$(azureServiceConnection)'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      set -euo pipefail
+      IMAGE="$(acrLoginServer)/$(imageRepository):$(imageTag)"
+      az containerapp update \
+        --name "$(containerAppName)" \
+        --resource-group "$(resourceGroup)" \
+        --image "$IMAGE"
+
+- task: AzureStaticWebApp@0
+  displayName: 'Deploy frontend to Azure Static Web App'
+  inputs:
+    azure_static_web_apps_api_token: '$(azureStaticWebAppsApiToken)'
+    app_location: 'frontend/dist/wsaa-risk-frontend'
+    output_location: ''
+    skip_app_build: true
 

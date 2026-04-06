@@ -1,8 +1,10 @@
 """FastAPI application bootstrap and router registration."""
 
 from contextlib import asynccontextmanager  # For FastAPI lifespan events
+import os
 
 from fastapi import FastAPI  # Main FastAPI framework
+from fastapi.middleware.cors import CORSMiddleware
 
 # Import routers to register endpoints (side-effect imports)
 # Domain router imports register Base*Api implementations at import time.
@@ -22,6 +24,12 @@ from src.generated.server_stubs.apis.metadata_api import router as metadata_rout
 from src.generated.server_stubs.apis.statistics_api import router as statistics_router
 from src.generated.server_stubs.apis.training_api import router as training_router
 
+
+def _get_cors_origins() -> list[str]:
+    """Parse allowed CORS origins from WSAA_CORS_ORIGINS only."""
+    configured = os.getenv("WSAA_CORS_ORIGINS", "")
+    return [origin.strip() for origin in configured.split(",") if origin.strip()]
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     """Run startup tasks (e.g., DB schema check) before serving requests."""
@@ -36,6 +44,15 @@ app = FastAPI(
     description="API for classifying health insurance risk based on applicant data, with endpoints for managing applicants, evaluating risk, retrieving model metadata, and running training jobs.",
     lifespan=lifespan,
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_get_cors_origins(),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Generated routers expose the OpenAPI contract endpoints.
 # Register all routers for API endpoints
 app.include_router(health_router)

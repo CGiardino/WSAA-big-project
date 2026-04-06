@@ -59,4 +59,18 @@ To start them locally, you can use Docker emulators:
 - Backend API: http://localhost:8000
 - API calls use `/api/*` and are proxied to the backend
 
+## Release Deployment (Azure)
+
+- Backend container image is built from `backend/Dockerfile` and pushed by `azure-pipelines.yml`.
+- Backend is deployed to Azure Container Apps using `az containerapp update`.
+- Frontend is built with Angular and deployed to Azure Static Web Apps.
+- Set pipeline variables/secrets before running release:
+  - `dockerRegistryServiceConnection`
+  - `azureServiceConnection`
+  - `acrLoginServer`
+  - `resourceGroup`
+  - `containerAppName`
+  - `azureStaticWebAppsApiToken`
+- For frontend API target, set `frontend/src/assets/env.js` `apiBaseUrl` to your Container App URL for release.
+
 Additional: [See Project Plan](PROJECT_PLAN.md)
