@@ -33,8 +33,6 @@ variables:
   value: 'https://lively-flower-01678ba03.1.azurestaticapps.net'
 - name: backendApiUrl
   value: 'https://riskclassifier.proudsmoke-f0a79518.westus2.azurecontainerapps.io'
-- name: WSAA_AUTH_FRONTEND_CLIENT_ID
-  value: ''
 # Set these in Azure DevOps variables (or a variable group).
 - name: containerAppName
   value: 'riskclassifier'
@@ -91,11 +89,11 @@ steps:
 - script: |
     set -euo pipefail
 
-    FRONTEND_CLIENT_ID="$(WSAA_AUTH_FRONTEND_CLIENT_ID)"
+    FRONTEND_CLIENT_ID="${WSAA_AUTH_FRONTEND_CLIENT_ID:-}"
 
-    AUTH_ENABLED="$(WSAA_AUTH_ENABLED)"
-    AUTH_TENANT_ID="$(WSAA_AUTH_TENANT_ID)"
-    AUTH_SCOPE="$(WSAA_AUTH_REQUIRED_SCOPE)"
+    AUTH_ENABLED="${WSAA_AUTH_ENABLED:-}"
+    AUTH_TENANT_ID="${WSAA_AUTH_TENANT_ID:-}"
+    AUTH_SCOPE="${WSAA_AUTH_REQUIRED_SCOPE:-}"
 
     # Normalize short scope names (e.g. access_as_user) into full api://.../scope URI.
     if [ -n "$AUTH_SCOPE" ] && [[ "$AUTH_SCOPE" != api://*/* ]]; then
@@ -125,6 +123,12 @@ steps:
     };
     EOF
   displayName: 'Set frontend runtime API URL'
+  env:
+    WSAA_AUTH_ENABLED: $(WSAA_AUTH_ENABLED)
+    WSAA_AUTH_TENANT_ID: $(WSAA_AUTH_TENANT_ID)
+    WSAA_AUTH_CLIENT_ID: $(WSAA_AUTH_CLIENT_ID)
+    WSAA_AUTH_FRONTEND_CLIENT_ID: $(WSAA_AUTH_FRONTEND_CLIENT_ID)
+    WSAA_AUTH_REQUIRED_SCOPE: $(WSAA_AUTH_REQUIRED_SCOPE)
 
 - script: |
     cd frontend
