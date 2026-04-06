@@ -7,21 +7,34 @@ trigger:
 - main
 
 variables:
-  python.version: '3.11'
-  node.version: '20.x'
-  imageRepository: 'wsaa-backend'
-  dockerfilePath: 'backend/Dockerfile'
-  buildContext: 'backend'
-  imageTag: '$(Build.BuildId)'
-  dockerRegistryServiceConnection: 'RiskClassifier'
-  azureServiceConnection: 'RiskClassifierResourceManager'
-  acrLoginServer: 'riskclassifier.azurecr.io'
-  frontendAppUrl: 'https://lively-flower-01678ba03.1.azurestaticapps.net'
-  backendApiUrl: 'https://riskclassifier.proudsmoke-f0a79518.westus2.azurecontainerapps.io'
-  # Set these in Azure DevOps variables (or a variable group).
-  containerAppName: 'riskclassifier'
-  # resourceGroup is resolved dynamically from Azure during deploy.
-  # azureStaticWebAppsApiToken: '<secret-token>'
+- group: RiskClassifier
+- name: python.version
+  value: '3.11'
+- name: node.version
+  value: '20.x'
+- name: imageRepository
+  value: 'wsaa-backend'
+- name: dockerfilePath
+  value: 'backend/Dockerfile'
+- name: buildContext
+  value: 'backend'
+- name: imageTag
+  value: '$(Build.BuildId)'
+- name: dockerRegistryServiceConnection
+  value: 'RiskClassifier'
+- name: azureServiceConnection
+  value: 'RiskClassifierResourceManager'
+- name: acrLoginServer
+  value: 'riskclassifier.azurecr.io'
+- name: frontendAppUrl
+  value: 'https://lively-flower-01678ba03.1.azurestaticapps.net'
+- name: backendApiUrl
+  value: 'https://riskclassifier.proudsmoke-f0a79518.westus2.azurecontainerapps.io'
+# Set these in Azure DevOps variables (or a variable group).
+- name: containerAppName
+  value: 'riskclassifier'
+# resourceGroup is resolved dynamically from Azure during deploy.
+# azureStaticWebAppsApiToken: '<secret-token>'
 
 pool:
   vmImage: ubuntu-latest
