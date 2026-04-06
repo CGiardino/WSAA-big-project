@@ -1,0 +1,13 @@
+export * from './applicants.service';
+import { ApplicantsService } from './applicants.service';
+export * from './evaluations.service';
+import { EvaluationsService } from './evaluations.service';
+export * from './health.service';
+import { HealthService } from './health.service';
+export * from './metadata.service';
+import { MetadataService } from './metadata.service';
+export * from './statistics.service';
+import { StatisticsService } from './statistics.service';
+export * from './training.service';
+import { TrainingService } from './training.service';
+export const APIS = [ApplicantsService, EvaluationsService, HealthService, MetadataService, StatisticsService, TrainingService];

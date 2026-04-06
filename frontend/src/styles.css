@@ -1,0 +1,95 @@
+:root {
+  --control-height: 42px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f7f9fc;
+  background-image: url('/assets/background.jpg');
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: cover;
+  background-attachment: fixed;
+  color: #1d2433;
+}
+
+h1,
+h2,
+h3 {
+  margin-top: 0;
+}
+
+input,
+select,
+button {
+  min-height: var(--control-height);
+  padding: 10px 12px;
+  border-radius: 4px;
+  border: 1px solid #c3cbe0;
+}
+
+button {
+  cursor: pointer;
+  background: #4990e2;
+  color: white;
+  border: 1px solid #c3cbe0;
+}
+
+button.secondary {
+  background: #4990e2;
+}
+button.delete {
+  background: #e24949;
+}
+
+button:disabled,
+input:disabled,
+select:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+button:disabled:hover,
+input:disabled:hover,
+select:disabled:hover {
+  cursor: not-allowed;
+}
+
+.card {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.spinner-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 4px solid #e3e8f0;
+  border-top: 4px solid #4990e2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spinner-label {
+  font-size: 1rem;
+  color: #1d2433;
+}
