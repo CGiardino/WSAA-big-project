@@ -87,6 +87,12 @@ steps:
     cat > frontend/src/assets/env.js <<'EOF'
     window.__WSAA_ENV__ = {
       apiBaseUrl: '$(backendApiUrl)',
+      auth: {
+        enabled: '$(WSAA_AUTH_ENABLED)' === 'true',
+        tenantId: '$(WSAA_AUTH_TENANT_ID)',
+        clientId: '$(WSAA_AUTH_CLIENT_ID)',
+        apiScope: '$(WSAA_AUTH_REQUIRED_SCOPE)',
+      },
     };
     EOF
   displayName: 'Set frontend runtime API URL'
@@ -137,6 +143,11 @@ steps:
       ENV_VARS=(
         "WSAA_CORS_ORIGINS=$(frontendAppUrl)"
         "PORT=80"
+        "WSAA_AUTH_ENABLED=$(WSAA_AUTH_ENABLED)"
+        "WSAA_AUTH_TENANT_ID=$(WSAA_AUTH_TENANT_ID)"
+        "WSAA_AUTH_CLIENT_ID=$(WSAA_AUTH_CLIENT_ID)"
+        "WSAA_AUTH_AUDIENCE=$(WSAA_AUTH_AUDIENCE)"
+        "WSAA_AUTH_REQUIRED_SCOPE=$(WSAA_AUTH_REQUIRED_SCOPE)"
         "WSAA_DB_CONNECTION_STRING=secretref:wsaa-db-conn"
         "WSAA_AZURE_STORAGE_CONNECTION_STRING=secretref:wsaa-storage-conn"
       )
