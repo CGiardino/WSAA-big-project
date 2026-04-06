@@ -1,3 +1,5 @@
+"""FastAPI application bootstrap and router registration."""
+
 from contextlib import asynccontextmanager  # For FastAPI lifespan events
 
 from fastapi import FastAPI  # Main FastAPI framework

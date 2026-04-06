@@ -1,3 +1,5 @@
+"""DAO for persisting and querying training run state."""
+
 from __future__ import annotations
 
 from src.db import get_connection
@@ -11,6 +13,8 @@ def _connect():
 
 
 class TrainingDAO:
+    """Handles training run state and dataset retrieval queries."""
+
     def __init__(self) -> None:
         pass
 

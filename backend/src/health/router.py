@@ -1,9 +1,13 @@
+"""Health endpoint implementation used by generated API stubs."""
+
 from src.generated.server_stubs.apis.health_api_base import BaseHealthApi
 from src.generated.server_stubs.models.health_response import HealthResponse
 from fastapi import HTTPException
 from src.db import get_connection
 
 class HealthApiImpl(BaseHealthApi):
+    """Performs lightweight readiness checks for DB connectivity."""
+
     async def get_health(self) -> HealthResponse:
         # Try to connect to the DB and run a trivial query
         try:

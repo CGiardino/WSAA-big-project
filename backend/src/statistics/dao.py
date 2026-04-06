@@ -1,3 +1,5 @@
+"""DAO for statistics aggregation and plot artifact lookup."""
+
 import tempfile
 from pathlib import Path
 from typing import Any

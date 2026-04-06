@@ -1,3 +1,5 @@
+"""HTTP routing layer for model training and training dataset APIs."""
+
 import logging
 import tempfile
 from datetime import UTC, datetime
@@ -243,6 +245,8 @@ def list_training_dataset(
 
 
 class TrainingApiImpl(BaseTrainingApi):
+    """Adapter that delegates generated stub calls to runtime handlers."""
+
     async def get_training_status(self) -> StubTrainingStatusResponse:
         response = get_training_status(get_training_dao())
         return StubTrainingStatusResponse.model_validate(response.model_dump(mode="json"))

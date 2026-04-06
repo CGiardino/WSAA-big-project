@@ -1,3 +1,5 @@
+"""Applicant persistence and risk evaluation orchestration DAO."""
+
 import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
@@ -49,6 +51,8 @@ def _row_to_applicant(row: dict | list) -> dict:
 
 
 class ApplicantDAO:
+    """Encapsulates applicant CRUD plus evaluation side effects."""
+
     def __init__(self) -> None:
         pass
 

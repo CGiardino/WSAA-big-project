@@ -1,3 +1,5 @@
+"""Database connection and startup schema initialization helpers."""
+
 
 # Standard library imports
 import os

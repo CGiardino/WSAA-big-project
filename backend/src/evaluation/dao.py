@@ -1,3 +1,5 @@
+"""Data-access service for single-request risk evaluations."""
+
 import tempfile
 from pathlib import Path
 

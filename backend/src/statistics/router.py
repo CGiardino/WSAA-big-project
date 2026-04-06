@@ -1,3 +1,5 @@
+"""HTTP routing layer for summary statistics and plot retrieval."""
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 
@@ -73,6 +75,8 @@ def get_statistics_plot(
 
 
 class StatisticsApiImpl(BaseStatisticsApi):
+    """Adapter that connects generated statistics stubs to handlers."""
+
     async def get_statistics_summary(self) -> StubStatisticsSummaryResponse:
         response = get_statistics_summary(get_statistics_dao())
         return StubStatisticsSummaryResponse.model_validate(response.model_dump())

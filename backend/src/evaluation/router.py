@@ -1,3 +1,5 @@
+"""HTTP routing layer for ad-hoc risk evaluations."""
+
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -54,6 +56,8 @@ def create_risk_evaluation(
 
 
 class EvaluationsApiImpl(BaseEvaluationsApi):
+    """Adapter that routes generated stub calls to domain handlers."""
+
     async def create_risk_evaluation(
         self,
         risk_evaluation_request: StubRiskEvaluationRequest,

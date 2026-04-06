@@ -1,3 +1,5 @@
+"""HTTP routing layer for model metadata endpoints."""
+
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -66,6 +68,8 @@ def get_model_availability(
 
 
 class MetadataApiImpl(BaseMetadataApi):
+    """Adapter that maps generated metadata stubs to handlers."""
+
     async def get_model_availability(self) -> StubModelAvailabilityResponse:
         response = get_model_availability(get_metadata_dao())
         return StubModelAvailabilityResponse.model_validate(response.model_dump())

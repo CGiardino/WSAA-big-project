@@ -1,3 +1,5 @@
+"""HTTP routing layer for applicant CRUD endpoints."""
+
 # FastAPI imports for API routing and dependency injection
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
@@ -105,6 +107,8 @@ def delete_applicant(
 
 # Implementation of OpenAPI-generated Applicants API (for server stubs)
 class ApplicantsApiImpl(BaseApplicantsApi):
+    """Adapter that bridges generated server stubs to runtime handlers."""
+
     async def create_applicant(
         self,
         applicant_create: StubApplicantCreate,

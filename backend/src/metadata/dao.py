@@ -1,3 +1,5 @@
+"""DAO for active model metadata and artifact availability checks."""
+
 from pathlib import Path
 from typing import Optional
 
