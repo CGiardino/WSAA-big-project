@@ -136,6 +136,7 @@ steps:
 
       ENV_VARS=(
         "WSAA_CORS_ORIGINS=$(frontendAppUrl)"
+        "PORT=80"
         "WSAA_DB_CONNECTION_STRING=secretref:wsaa-db-conn"
         "WSAA_AZURE_STORAGE_CONNECTION_STRING=secretref:wsaa-storage-conn"
       )
@@ -144,6 +145,7 @@ steps:
         --name "$(containerAppName)" \
         --resource-group "$RESOURCE_GROUP" \
         --image "$IMAGE" \
+        --target-port 80 \
         --set-env-vars "${ENV_VARS[@]}"
 
 - task: AzureCLI@2
