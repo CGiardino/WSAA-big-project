@@ -16,12 +16,16 @@ tags:
   - name: evaluations
   - name: applicants
 
+security:
+  - entraBearerAuth: []
+
 paths:
   /health:
     get:
       tags: [health]
       summary: Health check
       operationId: getHealth
+      security: []
       responses:
         '200':
           description: Service is healthy
@@ -376,6 +380,12 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
 components:
+  securitySchemes:
+    entraBearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   parameters:
     ApplicantId:
       name: applicant_id
