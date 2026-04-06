@@ -3,7 +3,7 @@
 from contextlib import asynccontextmanager  # For FastAPI lifespan events
 import os
 
-from fastapi import FastAPI  # Main FastAPI framework
+from fastapi import Depends, FastAPI  # Main FastAPI framework
 from fastapi.middleware.cors import CORSMiddleware
 
 # Import routers to register endpoints (side-effect imports)
@@ -23,6 +23,7 @@ from src.generated.server_stubs.apis.health_api import router as health_router
 from src.generated.server_stubs.apis.metadata_api import router as metadata_router
 from src.generated.server_stubs.apis.statistics_api import router as statistics_router
 from src.generated.server_stubs.apis.training_api import router as training_router
+from src.auth.dependencies import require_access_token
 
 
 def _get_cors_origins() -> list[str]:
@@ -56,8 +57,9 @@ app.add_middleware(
 # Generated routers expose the OpenAPI contract endpoints.
 # Register all routers for API endpoints
 app.include_router(health_router)
-app.include_router(applicants_router)
-app.include_router(evaluations_router)
-app.include_router(metadata_router)
-app.include_router(statistics_router)
-app.include_router(training_router)
+secured_route_dependencies = [Depends(require_access_token)]
+app.include_router(applicants_router, dependencies=secured_route_dependencies)
+app.include_router(evaluations_router, dependencies=secured_route_dependencies)
+app.include_router(metadata_router, dependencies=secured_route_dependencies)
+app.include_router(statistics_router, dependencies=secured_route_dependencies)
+app.include_router(training_router, dependencies=secured_route_dependencies)
