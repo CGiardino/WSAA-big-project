@@ -127,11 +127,24 @@ steps:
         echo "Unable to resolve resource group for Container App $(containerAppName)."
         exit 1
       fi
+      az containerapp secret set \
+        --name "$(containerAppName)" \
+        --resource-group "$RESOURCE_GROUP" \
+        --secrets \
+          wsaa-db-conn="$(WSAA_DB_CONNECTION_STRING)" \
+          wsaa-storage-conn="$(WSAA_AZURE_STORAGE_CONNECTION_STRING)"
+
+      ENV_VARS=(
+        "WSAA_CORS_ORIGINS=$(frontendAppUrl)"
+        "WSAA_DB_CONNECTION_STRING=secretref:wsaa-db-conn"
+        "WSAA_AZURE_STORAGE_CONNECTION_STRING=secretref:wsaa-storage-conn"
+      )
+
       az containerapp update \
         --name "$(containerAppName)" \
         --resource-group "$RESOURCE_GROUP" \
         --image "$IMAGE" \
-        --set-env-vars WSAA_CORS_ORIGINS="$(frontendAppUrl)"
+        --set-env-vars "${ENV_VARS[@]}"
 
 - task: AzureStaticWebApp@0
   displayName: 'Deploy frontend to Azure Static Web App'
