@@ -145,7 +145,6 @@ steps:
         --name "$(containerAppName)" \
         --resource-group "$RESOURCE_GROUP" \
         --image "$IMAGE" \
-        --target-port 80 \
         --set-env-vars "${ENV_VARS[@]}"
 
 - task: AzureCLI@2
