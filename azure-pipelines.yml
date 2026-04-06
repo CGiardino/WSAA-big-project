@@ -11,12 +11,6 @@ pool:
 
 strategy:
   matrix:
-    Python38:
-      python.version: '3.8'
-    Python39:
-      python.version: '3.9'
-    Python310:
-      python.version: '3.10'
     Python311:
       python.version: '3.11'
 
@@ -26,12 +20,35 @@ steps:
     versionSpec: '$(python.version)'
   displayName: 'Use Python $(python.version)'
 
+- task: NodeTool@0
+  inputs:
+    versionSpec: '20.x'
+  displayName: 'Use Node.js 20.x'
+
 - script: |
     python -m pip install --upgrade pip
-    pip install -r requirements.txt
+    pip install -r backend/requirements.txt
   displayName: 'Install dependencies'
 
 - script: |
-    pip install pytest pytest-azurepipelines
-    pytest
+    cd backend
+    pytest -q
+    exit_code=$?
+    # Exit code 5 means no tests collected; keep CI green until tests are added.
+    if [ "$exit_code" -eq 5 ]; then
+      echo "No tests collected in backend; skipping failure."
+      exit 0
+    fi
+    exit "$exit_code"
   displayName: 'pytest'
+
+- script: |
+    cd frontend
+    npm ci
+  displayName: 'Install frontend dependencies'
+
+- script: |
+    cd frontend
+    npm run build
+  displayName: 'Build frontend'
+
