@@ -19,8 +19,8 @@ variables:
   frontendAppUrl: 'https://lively-flower-01678ba03.1.azurestaticapps.net'
   backendApiUrl: 'https://riskclassifier.proudsmoke-f0a79518.westus2.azurecontainerapps.io'
   # Set these in Azure DevOps variables (or a variable group).
-  # resourceGroup: '<your-resource-group>'
-  # containerAppName: '<your-container-app-name>'
+  containerAppName: 'riskclassifier'
+  # resourceGroup is resolved dynamically from Azure during deploy.
   # azureStaticWebAppsApiToken: '<secret-token>'
 
 pool:
@@ -98,9 +98,14 @@ steps:
     inlineScript: |
       set -euo pipefail
       IMAGE="$(acrLoginServer)/$(imageRepository):$(imageTag)"
+      RESOURCE_GROUP="$(az resource list --name '$(containerAppName)' --resource-type Microsoft.App/containerApps --query '[0].resourceGroup' -o tsv)"
+      if [ -z "$RESOURCE_GROUP" ]; then
+        echo "Unable to resolve resource group for Container App $(containerAppName)."
+        exit 1
+      fi
       az containerapp update \
         --name "$(containerAppName)" \
-        --resource-group "$(resourceGroup)" \
+        --resource-group "$RESOURCE_GROUP" \
         --image "$IMAGE" \
         --set-env-vars WSAA_CORS_ORIGINS="$(frontendAppUrl)"
 
