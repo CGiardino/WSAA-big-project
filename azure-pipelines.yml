@@ -146,6 +146,53 @@ steps:
         --image "$IMAGE" \
         --set-env-vars "${ENV_VARS[@]}"
 
+- task: AzureCLI@2
+  displayName: 'Verify backend health endpoint'
+  inputs:
+    azureSubscription: '$(azureServiceConnection)'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      set -euo pipefail
+      RESOURCE_GROUP="$(az resource list --name '$(containerAppName)' --resource-type Microsoft.App/containerApps --query '[0].resourceGroup' -o tsv)"
+      if [ -z "$RESOURCE_GROUP" ]; then
+        echo "Unable to resolve resource group for Container App $(containerAppName)."
+        exit 1
+      fi
+
+      APP_FQDN="$(az containerapp show --name '$(containerAppName)' --resource-group "$RESOURCE_GROUP" --query 'properties.configuration.ingress.fqdn' -o tsv)"
+      if [ -z "$APP_FQDN" ]; then
+        echo "Unable to resolve ingress FQDN for Container App $(containerAppName)."
+        exit 1
+      fi
+
+      HEALTH_URL="https://${APP_FQDN}/health"
+      echo "Probing backend health at ${HEALTH_URL}"
+
+      max_attempts=20
+      sleep_seconds=15
+      for attempt in $(seq 1 "$max_attempts"); do
+        body_file="$(mktemp)"
+        http_code="$(curl -sS -o "$body_file" -w "%{http_code}" "$HEALTH_URL" || true)"
+
+        if [ "$http_code" = "200" ] && grep -q '"status"[[:space:]]*:[[:space:]]*"ok"' "$body_file"; then
+          echo "Backend is healthy (attempt ${attempt}/${max_attempts})."
+          rm -f "$body_file"
+          exit 0
+        fi
+
+        echo "Attempt ${attempt}/${max_attempts} failed: HTTP ${http_code}."
+        cat "$body_file" || true
+        rm -f "$body_file"
+
+        if [ "$attempt" -lt "$max_attempts" ]; then
+          sleep "$sleep_seconds"
+        fi
+      done
+
+      echo "Backend failed health checks after ${max_attempts} attempts."
+      exit 1
+
 - task: AzureStaticWebApp@0
   displayName: 'Deploy frontend to Azure Static Web App'
   inputs:
