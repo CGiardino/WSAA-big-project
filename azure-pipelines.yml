@@ -78,6 +78,12 @@ steps:
   displayName: 'Install frontend dependencies'
 
 - script: |
+    python -m pip install --upgrade openapi-generator-cli
+    cd frontend
+    npm run generate:api
+  displayName: 'Generate frontend OpenAPI client'
+
+- script: |
     cat > frontend/src/assets/env.js <<'EOF'
     window.__WSAA_ENV__ = {
       apiBaseUrl: '$(backendApiUrl)',
@@ -89,6 +95,11 @@ steps:
     cd frontend
     npm run build
   displayName: 'Build frontend'
+
+- script: |
+    cd backend
+    ./scripts/generate_openapi_models.sh
+  displayName: 'Generate backend OpenAPI sources'
 
 - task: Docker@2
   displayName: 'Build and push backend image'

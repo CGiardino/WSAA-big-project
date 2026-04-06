@@ -219,4 +219,4 @@ node_modules/
 # Angular
 .angular/
 coverage/
-src/app/generated-api
+frontend/src/app/generated-api/
