@@ -4,7 +4,10 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
 trigger:
-- main
+  batch: true
+  branches:
+    include:
+    - main
 
 variables:
 - group: RiskClassifier
@@ -86,19 +89,44 @@ steps:
   displayName: 'Generate frontend OpenAPI client'
 
 - script: |
+    set -euo pipefail
+
     FRONTEND_CLIENT_ID="$(WSAA_AUTH_FRONTEND_CLIENT_ID)"
-    cat > frontend/src/assets/env.js <<'EOF'
+    if [ -z "$FRONTEND_CLIENT_ID" ]; then
+      FRONTEND_CLIENT_ID="$(WSAA_AUTH_CLIENT_ID)"
+    fi
+
+    AUTH_ENABLED="$(WSAA_AUTH_ENABLED)"
+    AUTH_TENANT_ID="$(WSAA_AUTH_TENANT_ID)"
+    AUTH_SCOPE="$(WSAA_AUTH_REQUIRED_SCOPE)"
+
+    # Normalize short scope names (e.g. access_as_user) into full api://.../scope URI.
+    if [ -n "$AUTH_SCOPE" ] && [[ "$AUTH_SCOPE" != api://*/* ]]; then
+      AUTH_AUDIENCE="$(WSAA_AUTH_AUDIENCE)"
+      if [ -z "$AUTH_AUDIENCE" ]; then
+        AUTH_AUDIENCE="api://$(WSAA_AUTH_CLIENT_ID)"
+      fi
+      AUTH_SCOPE="${AUTH_AUDIENCE}/${AUTH_SCOPE}"
+    fi
+
+    if [ "$AUTH_ENABLED" = "true" ]; then
+      if [ -z "$AUTH_TENANT_ID" ] || [ -z "$FRONTEND_CLIENT_ID" ] || [ -z "$AUTH_SCOPE" ]; then
+        echo "Missing frontend Entra settings. Required when WSAA_AUTH_ENABLED=true: WSAA_AUTH_TENANT_ID, WSAA_AUTH_FRONTEND_CLIENT_ID (or WSAA_AUTH_CLIENT_ID), WSAA_AUTH_REQUIRED_SCOPE"
+        exit 1
+      fi
+    fi
+
+    cat > frontend/src/assets/env.js <<EOF
     window.__WSAA_ENV__ = {
       apiBaseUrl: '$(backendApiUrl)',
       auth: {
-        enabled: '$(WSAA_AUTH_ENABLED)' === 'true',
-        tenantId: '$(WSAA_AUTH_TENANT_ID)',
-        clientId: '__FRONTEND_CLIENT_ID__',
-        apiScope: '$(WSAA_AUTH_REQUIRED_SCOPE)',
+        enabled: '${AUTH_ENABLED}' === 'true',
+        tenantId: '${AUTH_TENANT_ID}',
+        clientId: '${FRONTEND_CLIENT_ID}',
+        apiScope: '${AUTH_SCOPE}',
       },
     };
     EOF
-    sed -i "s#__FRONTEND_CLIENT_ID__#${FRONTEND_CLIENT_ID}#g" frontend/src/assets/env.js
   displayName: 'Set frontend runtime API URL'
 
 - script: |
