@@ -9,7 +9,7 @@ trigger:
 variables:
 - group: RiskClassifier
 - name: python.version
-  value: '3.11'
+  value: '3.12'
 - name: node.version
   value: '20.x'
 - name: imageRepository
@@ -41,8 +41,8 @@ pool:
 
 strategy:
   matrix:
-    Python311:
-      python.version: '3.11'
+    Python312:
+      python.version: '3.12'
 
 steps:
 - task: UsePythonVersion@0
