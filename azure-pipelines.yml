@@ -92,9 +92,6 @@ steps:
     set -euo pipefail
 
     FRONTEND_CLIENT_ID="$(WSAA_AUTH_FRONTEND_CLIENT_ID)"
-    if [ -z "$FRONTEND_CLIENT_ID" ]; then
-      FRONTEND_CLIENT_ID="$(WSAA_AUTH_CLIENT_ID)"
-    fi
 
     AUTH_ENABLED="$(WSAA_AUTH_ENABLED)"
     AUTH_TENANT_ID="$(WSAA_AUTH_TENANT_ID)"
@@ -111,7 +108,7 @@ steps:
 
     if [ "$AUTH_ENABLED" = "true" ]; then
       if [ -z "$AUTH_TENANT_ID" ] || [ -z "$FRONTEND_CLIENT_ID" ] || [ -z "$AUTH_SCOPE" ]; then
-        echo "Missing frontend Entra settings. Required when WSAA_AUTH_ENABLED=true: WSAA_AUTH_TENANT_ID, WSAA_AUTH_FRONTEND_CLIENT_ID (or WSAA_AUTH_CLIENT_ID), WSAA_AUTH_REQUIRED_SCOPE"
+        echo "Missing frontend Entra settings. Required when WSAA_AUTH_ENABLED=true: WSAA_AUTH_TENANT_ID, WSAA_AUTH_FRONTEND_CLIENT_ID, WSAA_AUTH_REQUIRED_SCOPE"
         exit 1
       fi
     fi
