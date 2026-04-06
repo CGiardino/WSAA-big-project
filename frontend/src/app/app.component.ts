@@ -1,6 +1,6 @@
 // Main UI container for evaluation, applicants, statistics, and training flows.
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
@@ -80,7 +80,7 @@ type SortDirection = 'asc' | 'desc';
     },
   ],
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   // Shared UI state for all tabs lives here to keep cross-tab behavior predictable.
   title = 'Health Insurance Risk Classifier';
   // Friendly labels for plot files returned by backend statistics endpoint.
@@ -161,8 +161,13 @@ export class AppComponent implements OnInit {
   statisticsLoading = false;
   statisticsSummary: StatisticsSummary | null = null;
   statisticsPlots: StatisticsPlots['items'] = [];
+  statisticsPlotObjectUrls: Record<string, string> = {};
+  statisticsPlotLoadErrors: Record<string, string> = {};
+  statisticsPlotLoading: Record<string, boolean> = {};
+  selectedPlotFileName: string | null = null;
   selectedPlotName: string | null = null;
   selectedPlotUrl: string | null = null;
+  selectedPlotError = '';
 
   get trainingInProgress(): boolean {
     // Combine optimistic local flag with latest server status.
@@ -176,6 +181,10 @@ export class AppComponent implements OnInit {
     this.loadApplicants();
     this.refreshTrainingStatus();
     this.syncTabWithHash();
+  }
+
+  ngOnDestroy(): void {
+    this.revokeAllPlotObjectUrls();
   }
 
   setActiveTab(tab: AppTab, syncHash = true): void {
@@ -236,6 +245,8 @@ export class AppComponent implements OnInit {
       next: (result) => {
         this.statisticsSummary = result.summary;
         this.statisticsPlots = result.plots.items;
+        this.reconcileStatisticsPlotCache();
+        this.preloadStatisticsPlots();
         this.statisticsLoading = false;
       },
       error: (err) => {
@@ -245,15 +256,12 @@ export class AppComponent implements OnInit {
     });
   }
 
-  getPlotUrl(plotUrl: string): string {
-    // Backend serves under /v1/* while frontend proxies /api/* in dev.
-    if (plotUrl.startsWith('/api/')) {
-      return plotUrl;
-    }
-    if (plotUrl.startsWith('/')) {
-      return `/api${plotUrl}`;
-    }
-    return `/api/${plotUrl}`;
+  getPlotImageUrl(plotName: string): string | null {
+    return this.statisticsPlotObjectUrls[plotName] ?? null;
+  }
+
+  hasPlotLoadError(plotName: string): boolean {
+    return this.statisticsPlotLoadErrors[plotName] !== undefined;
   }
 
   getPlotLabel(plotName: string): string {
@@ -273,13 +281,20 @@ export class AppComponent implements OnInit {
   }
 
   openPlotModal(plot: StatisticsPlots['items'][number]): void {
+    this.selectedPlotFileName = plot.name;
     this.selectedPlotName = this.getPlotLabel(plot.name);
-    this.selectedPlotUrl = this.getPlotUrl(plot.url);
+    this.selectedPlotError = '';
+    this.selectedPlotUrl = this.getPlotImageUrl(plot.name);
+    if (this.selectedPlotUrl === null) {
+      this.fetchPlotImage(plot.name, true);
+    }
   }
 
   closePlotModal(): void {
+    this.selectedPlotFileName = null;
     this.selectedPlotName = null;
     this.selectedPlotUrl = null;
+    this.selectedPlotError = '';
   }
 
   onPlotBackdropClick(event: MouseEvent): void {
@@ -290,9 +305,78 @@ export class AppComponent implements OnInit {
 
   @HostListener('document:keydown.escape')
   onEscapeKey(): void {
-    if (this.selectedPlotUrl !== null) {
+    if (this.selectedPlotName !== null) {
       this.closePlotModal();
     }
+  }
+
+  private preloadStatisticsPlots(): void {
+    for (const plot of this.statisticsPlots) {
+      if (this.statisticsPlotObjectUrls[plot.name] !== undefined) {
+        continue;
+      }
+      this.fetchPlotImage(plot.name);
+    }
+  }
+
+  private fetchPlotImage(plotName: string, updateModal = false): void {
+    if (this.statisticsPlotLoading[plotName] === true) {
+      return;
+    }
+
+    this.statisticsPlotLoading[plotName] = true;
+    delete this.statisticsPlotLoadErrors[plotName];
+
+    this.api.getStatisticsPlot(plotName).subscribe({
+      next: (blob) => {
+        const currentUrl = this.statisticsPlotObjectUrls[plotName];
+        if (currentUrl !== undefined) {
+          URL.revokeObjectURL(currentUrl);
+        }
+        const objectUrl = URL.createObjectURL(blob);
+        this.statisticsPlotObjectUrls[plotName] = objectUrl;
+        delete this.statisticsPlotLoading[plotName];
+
+        if (updateModal && this.selectedPlotFileName === plotName) {
+          this.selectedPlotUrl = objectUrl;
+          this.selectedPlotError = '';
+        }
+      },
+      error: (err) => {
+        this.statisticsPlotLoadErrors[plotName] = err?.error?.detail ?? 'Failed to load plot image';
+        delete this.statisticsPlotLoading[plotName];
+        if (updateModal && this.selectedPlotFileName === plotName) {
+          this.selectedPlotError = this.statisticsPlotLoadErrors[plotName];
+        }
+      },
+    });
+  }
+
+  private reconcileStatisticsPlotCache(): void {
+    const activePlotNames = new Set(this.statisticsPlots.map((plot) => plot.name));
+    for (const plotName of Object.keys(this.statisticsPlotObjectUrls)) {
+      if (!activePlotNames.has(plotName)) {
+        URL.revokeObjectURL(this.statisticsPlotObjectUrls[plotName]);
+        delete this.statisticsPlotObjectUrls[plotName];
+      }
+    }
+    for (const plotName of Object.keys(this.statisticsPlotLoadErrors)) {
+      if (!activePlotNames.has(plotName)) {
+        delete this.statisticsPlotLoadErrors[plotName];
+      }
+    }
+    for (const plotName of Object.keys(this.statisticsPlotLoading)) {
+      if (!activePlotNames.has(plotName)) {
+        delete this.statisticsPlotLoading[plotName];
+      }
+    }
+  }
+
+  private revokeAllPlotObjectUrls(): void {
+    for (const objectUrl of Object.values(this.statisticsPlotObjectUrls)) {
+      URL.revokeObjectURL(objectUrl);
+    }
+    this.statisticsPlotObjectUrls = {};
   }
 
   loadApplicants(): void {

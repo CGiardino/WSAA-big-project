@@ -499,20 +499,24 @@
         (keydown.enter)="openPlotModal(plot)"
         (keydown.space)="openPlotModal(plot); $event.preventDefault()"
       >
-        <img [src]="getPlotUrl(plot.url)" [alt]="getPlotLabel(plot.name)" loading="lazy" />
+        <img *ngIf="getPlotImageUrl(plot.name) as plotImageUrl" [src]="plotImageUrl" [alt]="getPlotLabel(plot.name)" loading="lazy" />
+        <p class="muted" *ngIf="!getPlotImageUrl(plot.name) && !hasPlotLoadError(plot.name)">Loading plot...</p>
+        <p class="error muted" *ngIf="hasPlotLoadError(plot.name)">Plot unavailable</p>
         <figcaption>{{ getPlotLabel(plot.name) }}</figcaption>
       </figure>
     </div>
     <p *ngIf="!statisticsLoading && statisticsPlots.length === 0" class="muted">No generated plots found.</p>
   </section>
 
-  <div class="image-modal-backdrop" *ngIf="selectedPlotUrl" (click)="onPlotBackdropClick($event)">
+  <div class="image-modal-backdrop" *ngIf="selectedPlotName" (click)="onPlotBackdropClick($event)">
     <div class="image-modal" role="dialog" aria-modal="true" [attr.aria-label]="selectedPlotName || 'Plot preview'">
       <div class="image-modal-header">
         <h3>{{ selectedPlotName }}</h3>
         <button type="button" class="secondary" (click)="closePlotModal()">Close</button>
       </div>
-      <img [src]="selectedPlotUrl" [alt]="selectedPlotName || 'Selected plot'" />
+      <img *ngIf="selectedPlotUrl" [src]="selectedPlotUrl" [alt]="selectedPlotName || 'Selected plot'" />
+      <p class="muted" *ngIf="!selectedPlotUrl && !selectedPlotError">Loading plot...</p>
+      <p class="error" *ngIf="selectedPlotError">{{ selectedPlotError }}</p>
     </div>
   </div>
 

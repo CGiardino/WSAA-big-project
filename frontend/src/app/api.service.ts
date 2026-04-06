@@ -91,4 +91,8 @@ export class ApiService {
   listStatisticsPlots(): Observable<StatisticsPlots> {
     return this.statisticsApi.listStatisticsPlots();
   }
+
+  getStatisticsPlot(plotName: string): Observable<Blob> {
+    return this.statisticsApi.getStatisticsPlot(plotName);
+  }
 }
