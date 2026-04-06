@@ -16,6 +16,8 @@ variables:
   dockerRegistryServiceConnection: 'RiskClassifier'
   azureServiceConnection: 'RiskClassifierResourceManager'
   acrLoginServer: 'riskclassifier.azurecr.io'
+  frontendAppUrl: 'https://lively-flower-01678ba03.1.azurestaticapps.net'
+  backendApiUrl: 'https://riskclassifier.proudsmoke-f0a79518.westus2.azurecontainerapps.io'
   # Set these in Azure DevOps variables (or a variable group).
   # resourceGroup: '<your-resource-group>'
   # containerAppName: '<your-container-app-name>'
@@ -63,6 +65,14 @@ steps:
   displayName: 'Install frontend dependencies'
 
 - script: |
+    cat > frontend/src/assets/env.js <<'EOF'
+    window.__WSAA_ENV__ = {
+      apiBaseUrl: '$(backendApiUrl)',
+    };
+    EOF
+  displayName: 'Set frontend runtime API URL'
+
+- script: |
     cd frontend
     npm run build
   displayName: 'Build frontend'
@@ -91,7 +101,8 @@ steps:
       az containerapp update \
         --name "$(containerAppName)" \
         --resource-group "$(resourceGroup)" \
-        --image "$IMAGE"
+        --image "$IMAGE" \
+        --set-env-vars WSAA_CORS_ORIGINS="$(frontendAppUrl)"
 
 - task: AzureStaticWebApp@0
   displayName: 'Deploy frontend to Azure Static Web App'
