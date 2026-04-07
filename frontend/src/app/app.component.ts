@@ -98,6 +98,7 @@ export class AppComponent implements OnInit, OnDestroy {
   };
 
   activeTab: AppTab = 'evaluation';
+  tabsExpanded = false;
 
   // Applicants tab state (table, paging, search, and edit workflow).
   applicants: Applicant[] = [];
@@ -190,6 +191,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   setActiveTab(tab: AppTab, syncHash = true): void {
     this.activeTab = tab;
+    this.tabsExpanded = false;
     if (syncHash) {
       this.updateHashForTab(tab);
     }
@@ -201,6 +203,10 @@ export class AppComponent implements OnInit, OnDestroy {
       // Lazy-load training dataset to avoid extra startup API calls.
       this.loadTrainingDataset();
     }
+  }
+
+  toggleTabs(): void {
+    this.tabsExpanded = !this.tabsExpanded;
   }
 
   @HostListener('window:hashchange')

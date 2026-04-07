@@ -1,11 +1,21 @@
 <main class="container" [class.training-full-height]="activeTab === 'training'">
-  <nav class="tabs" aria-label="Main sections">
+  <nav class="tabs" [class.tabs-expanded]="tabsExpanded" aria-label="Main sections">
     <div class="brand" aria-label="Risk Classifier">
       <span class="brand-main">Risk</span>
       <span class="brand-accent">Classifier</span>
     </div>
 
-    <div class="tab-links">
+    <button
+      type="button"
+      class="tab-toggle"
+      [attr.aria-expanded]="tabsExpanded"
+      aria-controls="main-tab-links"
+      (click)="toggleTabs()"
+    >
+      {{ tabsExpanded ? 'Hide tabs' : 'Show tabs' }}
+    </button>
+
+    <div id="main-tab-links" class="tab-links">
       <button type="button" [class.active]="activeTab === 'evaluation'" (click)="setActiveTab('evaluation')">
         Risk Evaluation
       </button>
