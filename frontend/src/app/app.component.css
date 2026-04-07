@@ -551,6 +551,8 @@ form.grid button {
   .container.training-full-height .training-card .training-dataset-scroll {
     max-height: 55vh;
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
     overflow-x: auto;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -675,8 +677,9 @@ form.grid button {
   }
 
   .training-dataset-scroll table {
-    min-width: 680px;
-    width: max-content;
+    min-width: 0;
+    width: 100%;
+    table-layout: fixed;
   }
 
   .training-status-report {
@@ -694,8 +697,10 @@ form.grid button {
   .classification-report-table td,
   .training-dataset-scroll th,
   .training-dataset-scroll td {
-    padding: 8px 10px;
-    font-size: 12px;
+    padding: 6px 8px;
+    font-size: 11px;
+    white-space: normal;
+    word-break: break-word;
   }
 
   .applicants-table td:last-child button {
@@ -925,6 +930,10 @@ td select {
 
 .applicants-table td:last-child button:last-child {
   margin-right: 0;
+}
+
+.applicant-card-toggle {
+  display: none;
 }
 
 tr.new-applicant-highlight td {
@@ -1246,26 +1255,54 @@ form.form-layout {
     box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
   }
 
+  .applicants-table tr.applicant-card-collapsed td:not(:first-child) {
+    display: none;
+  }
+
   .applicants-table td {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: flex-start;
-    gap: 12px;
+    gap: 8px;
     width: 100%;
     padding: 10px 12px;
     white-space: normal;
+    word-break: normal;
     border-bottom: 1px solid #eef2f7;
-    text-align: right;
+    text-align: left;
   }
 
   .applicants-table td::before {
     content: attr(data-label);
-    flex: 0 0 92px;
+    flex: 0 0 auto;
     font-size: 12px;
     font-weight: 600;
     color: #475467;
     text-align: left;
     white-space: nowrap;
+  }
+
+  .applicants-table td:first-child {
+    justify-content: flex-start;
+    align-items: center;
+    text-align: left;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+
+  .applicants-table td:first-child > span {
+    white-space: nowrap;
+    word-break: normal;
+  }
+
+  .applicants-table td:first-child .applicant-mobile-risk-summary {
+    display: inline-flex;
+    margin-left: 0;
+    color: #475467;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    word-break: normal;
   }
 
   .applicants-table td:last-child {
@@ -1320,6 +1357,36 @@ form.form-layout {
   .applicants-table td .field-error {
     text-align: left;
   }
+
+  .applicants-table td:first-child .applicant-card-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    width: auto;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
 }
 
+/* Keep training layout mobile-first even when later base rules are present. */
+@media (max-width: 640px) {
+  .training-status-layout {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+
+  .training-status-summary,
+  .training-status-report,
+  .container.training-full-height .training-card,
+  .container.training-full-height .training-card .training-dataset-scroll {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .container.training-full-height .training-card .training-dataset-scroll {
+    max-width: 100%;
+    min-width: 0;
+  }
+}
 

@@ -340,9 +340,25 @@
           <tr
             *ngFor="let a of sortedApplicants"
             [class.new-applicant-highlight]="a.id === highlightedApplicantId"
+            [class.applicant-card-expanded]="isApplicantExpanded(a.id)"
+            [class.applicant-card-collapsed]="!isApplicantExpanded(a.id)"
             [ngClass]="a.evaluation?.risk_category ? 'risk-' + a.evaluation?.risk_category?.toLowerCase() : ''"
           >
-            <td data-label="ID">{{ a.id }}</td>
+            <td data-label="ID">
+              <span>{{ a.id }}</span>
+              <span class="applicant-mobile-risk-summary">
+                Risk: {{ a.evaluation?.risk_category || 'n/a' }}
+              </span>
+              <button
+                type="button"
+                class="secondary applicant-card-toggle"
+                (click)="toggleApplicantExpanded(a.id)"
+                [attr.aria-expanded]="isApplicantExpanded(a.id)"
+                [attr.aria-label]="isApplicantExpanded(a.id) ? 'Collapse applicant ' + a.id : 'Expand applicant ' + a.id"
+              >
+                {{ isApplicantExpanded(a.id) ? 'Hide details' : 'Show details' }}
+              </button>
+            </td>
             <td data-label="Age">
               <ng-container *ngIf="editingApplicantId === a.id; else ageText">
                 <input

@@ -119,6 +119,7 @@ export class AppComponent implements OnInit, OnDestroy {
   editingApplicantId: number | null = null;
   savingApplicantId: number | null = null;
   applicantEditInput: ApplicantEditInput | null = null;
+  expandedApplicantIds = new Set<number>();
   private applicantHighlightTimeout: ReturnType<typeof setTimeout> | null = null;
   applicantInput: ApplicantInput = {
     age: 42,
@@ -388,6 +389,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.applicantTotal = 0;
     this.applicantOffset = 0;
     this.hasMoreApplicants = true;
+    this.expandedApplicantIds.clear();
     this.applicantError = '';
     this.loadNextApplicantsPage();
   }
@@ -410,6 +412,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.api.getApplicantById(normalizedId).subscribe({
       next: (applicant) => {
         this.applicants = [applicant];
+        this.syncExpandedApplicantIds();
         this.applicantTotal = 1;
         this.applicantOffset = 1;
         this.hasMoreApplicants = false;
@@ -417,6 +420,7 @@ export class AppComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.applicants = [];
+        this.syncExpandedApplicantIds();
         this.applicantTotal = 0;
         this.applicantOffset = 0;
         this.hasMoreApplicants = false;
@@ -439,6 +443,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.api.listApplicants(this.applicantPageSize, this.applicantOffset).subscribe({
       next: (page: ApplicantList) => {
         this.applicants = [...this.applicants, ...page.items];
+        this.syncExpandedApplicantIds();
         this.applicantTotal = page.total;
         this.applicantOffset = page.offset + page.items.length;
         this.hasMoreApplicants = page.has_more;
@@ -608,6 +613,7 @@ export class AppComponent implements OnInit, OnDestroy {
   startEditApplicant(applicant: Applicant): void {
     this.applicantError = '';
     this.editingApplicantId = applicant.id;
+    this.expandedApplicantIds.add(applicant.id);
     this.applicantEditInput = {
       age: applicant.age,
       sex: applicant.sex,
@@ -615,6 +621,27 @@ export class AppComponent implements OnInit, OnDestroy {
       children: applicant.children,
       smoker: applicant.smoker,
     };
+  }
+
+  isApplicantExpanded(applicantId: number): boolean {
+    return this.expandedApplicantIds.has(applicantId);
+  }
+
+  toggleApplicantExpanded(applicantId: number): void {
+    if (this.expandedApplicantIds.has(applicantId)) {
+      this.expandedApplicantIds.delete(applicantId);
+      return;
+    }
+    this.expandedApplicantIds.add(applicantId);
+  }
+
+  private syncExpandedApplicantIds(): void {
+    const visibleIds = new Set(this.applicants.map((applicant) => applicant.id));
+    this.expandedApplicantIds.forEach((applicantId) => {
+      if (!visibleIds.has(applicantId)) {
+        this.expandedApplicantIds.delete(applicantId);
+      }
+    });
   }
 
   cancelEditApplicant(): void {
