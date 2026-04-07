@@ -992,6 +992,10 @@ td select {
   display: none;
 }
 
+.applicant-mobile-risk-summary {
+  display: none;
+}
+
 tr.new-applicant-highlight td {
   background: #ecfdf3;
   animation: applicantHighlightFade 3s ease-out forwards;
@@ -1338,6 +1342,10 @@ form.form-layout {
     white-space: nowrap;
   }
 
+  .applicants-table td:first-child::before {
+    display: none;
+  }
+
   .applicants-table td:first-child {
     justify-content: flex-start;
     align-items: center;
@@ -1359,6 +1367,10 @@ form.form-layout {
     font-weight: 600;
     white-space: nowrap;
     word-break: normal;
+  }
+
+  .applicants-table td:first-child .applicant-id-value {
+    display: none;
   }
 
   .applicants-table td:last-child {

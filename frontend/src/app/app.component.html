@@ -366,9 +366,9 @@
             [ngClass]="a.evaluation?.risk_category ? 'risk-' + a.evaluation?.risk_category?.toLowerCase() : ''"
           >
             <td data-label="ID">
-              <span>{{ a.id }}</span>
+              <span class="applicant-id-value">{{ a.id }}</span>
               <span class="applicant-mobile-risk-summary">
-                Risk: {{ a.evaluation?.risk_category || 'n/a' }}
+                ID: {{ a.id }} - Risk: {{ (a.evaluation?.risk_category || 'n/a') | lowercase }}
               </span>
               <button
                 type="button"
