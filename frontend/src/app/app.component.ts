@@ -930,6 +930,13 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
+  selectAllOnFocus(event: FocusEvent): void {
+    const target = event.target;
+    if (target instanceof HTMLInputElement) {
+      target.select();
+    }
+  }
+
   // Prevent non-integer input in number fields (e, +, -, .)
   blockNonIntegerInput(event: KeyboardEvent): void {
     const invalidKeys = ['e', 'E', '+', '-', '.'];
