@@ -342,8 +342,8 @@
             [class.new-applicant-highlight]="a.id === highlightedApplicantId"
             [ngClass]="a.evaluation?.risk_category ? 'risk-' + a.evaluation?.risk_category?.toLowerCase() : ''"
           >
-            <td>{{ a.id }}</td>
-            <td>
+            <td data-label="ID">{{ a.id }}</td>
+            <td data-label="Age">
               <ng-container *ngIf="editingApplicantId === a.id; else ageText">
                 <input
                   type="number"
@@ -355,7 +355,7 @@
               </ng-container>
               <ng-template #ageText>{{ a.age }}</ng-template>
             </td>
-            <td>
+            <td data-label="Sex">
               <ng-container *ngIf="editingApplicantId === a.id; else sexText">
                 <select [(ngModel)]="applicantEditInput!.sex" [name]="'editSex' + a.id">
                   <option value="male">Male</option>
@@ -364,7 +364,7 @@
               </ng-container>
               <ng-template #sexText>{{ a.sex }}</ng-template>
             </td>
-            <td>
+            <td data-label="BMI">
               <ng-container *ngIf="editingApplicantId === a.id; else bmiText">
                 <input
                   type="number"
@@ -376,7 +376,7 @@
               </ng-container>
               <ng-template #bmiText>{{ a.bmi }}</ng-template>
             </td>
-            <td>
+            <td data-label="Children">
               <ng-container *ngIf="editingApplicantId === a.id; else childrenText">
                 <input
                   type="number"
@@ -388,7 +388,7 @@
               </ng-container>
               <ng-template #childrenText>{{ a.children }}</ng-template>
             </td>
-            <td>
+            <td data-label="Smoker">
               <ng-container *ngIf="editingApplicantId === a.id; else smokerText">
                 <select [(ngModel)]="applicantEditInput!.smoker" [name]="'editSmoker' + a.id">
                   <option value="yes">Yes</option>
@@ -397,8 +397,8 @@
               </ng-container>
               <ng-template #smokerText>{{ a.smoker }}</ng-template>
             </td>
-            <td>{{ a.evaluation?.risk_category || 'n/a' }}</td>
-            <td>
+            <td data-label="Risk">{{ a.evaluation?.risk_category || 'n/a' }}</td>
+            <td data-label="Action">
               <ng-container *ngIf="editingApplicantId === a.id; else defaultActions">
                 <button
                   type="button"

@@ -503,6 +503,284 @@ form.grid button {
   }
 }
 
+@media (max-width: 640px) {
+  .container {
+    margin: 12px auto;
+    padding: 0 10px;
+    gap: 12px;
+  }
+
+  .container.training-full-height {
+    height: auto;
+    min-height: 0;
+    grid-template-rows: auto auto;
+  }
+
+  .container.training-full-height .training-card {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    display: block;
+    padding: 12px;
+  }
+
+  .container.training-full-height .training-card .training-dataset-scroll {
+    max-height: 55vh;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
+  .container.training-full-height .training-card > .card-header {
+    padding: 0;
+    margin: 0 0 12px 0;
+  }
+
+  .container.training-full-height .training-card > .error {
+    margin: 0 0 12px 0;
+    padding: 0;
+  }
+
+  .container.training-full-height .training-card > .result {
+    margin: 0 0 12px 0;
+    padding: 12px;
+  }
+
+  .container.training-full-height .training-card > p {
+    margin: 0 0 12px 0;
+    padding: 0;
+  }
+
+  .tabs {
+    padding: 12px;
+  }
+
+  .brand-main,
+  .brand-accent {
+    font-size: 28px;
+  }
+
+  .tab-links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    width: 100%;
+    overflow-x: visible;
+    gap: 8px;
+  }
+
+  .tabs button {
+    width: 100%;
+    font-size: 16px;
+    padding: 12px 14px;
+    border: 1px solid #eaecf0;
+    border-radius: 10px;
+    text-align: center;
+  }
+
+  .tabs button.active {
+    background: #f9fafb;
+    border-bottom-color: #eaecf0;
+  }
+
+  form.form-layout {
+    padding: 14px;
+    gap: 14px;
+  }
+
+  .hero {
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  .hero-title {
+    font-size: clamp(24px, 8vw, 34px);
+  }
+
+  .hero-copy {
+    font-size: 15px;
+    margin-top: 12px;
+  }
+
+  .hero-visual {
+    border-radius: 18px;
+    padding: 16px;
+  }
+
+  .form-row,
+  .stats-grid,
+  .plot-grid,
+  .training-status-layout,
+  .applicants-input-row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-field.form-field-button,
+  .evaluation-inline-actions {
+    padding-top: 0;
+  }
+
+  .form-field.form-field-button button,
+  .evaluation-inline-actions button,
+  .applicants-action-row > button,
+  .applicant-search-inline button,
+  .modal-actions button,
+  .image-modal-header button {
+    width: 100%;
+  }
+
+  .applicants-action-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .applicant-search-inline {
+    width: 100%;
+  }
+
+  .applicant-search-inline .applicant-search-controls {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .applicant-search-controls input {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .applicants-scroll {
+    border-radius: 8px;
+    -webkit-overflow-scrolling: touch;
+    max-height: 58vh;
+    overflow: auto;
+  }
+
+  .applicants-table,
+  .classification-report-table {
+    min-width: 620px;
+  }
+
+  .training-dataset-scroll table {
+    min-width: 680px;
+  }
+
+  .training-status-report {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .applicants-table col.applicants-action-col {
+    width: 150px;
+  }
+
+  .applicants-table th,
+  .applicants-table td,
+  .classification-report-table th,
+  .classification-report-table td,
+  .training-dataset-scroll th,
+  .training-dataset-scroll td {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .applicants-table td:last-child button {
+    margin: 0 0 8px 0;
+  }
+
+  .applicants-table td:last-child button:last-child {
+    margin-bottom: 0;
+  }
+
+  .plot-grid {
+    gap: 10px;
+  }
+
+  .plot-card img {
+    height: 150px;
+  }
+
+  .image-modal-backdrop {
+    padding: 8px;
+  }
+
+  .image-modal {
+    width: 100%;
+    max-height: 100dvh;
+  }
+
+  .image-modal-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .image-modal-header h3 {
+    text-align: center;
+  }
+
+  .image-modal img {
+    height: min(72dvh, 620px);
+  }
+
+  .evaluation-result-simple {
+    white-space: normal;
+  }
+
+  .evaluation-result-row .evaluation-result-simple {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .training-status-summary p,
+  .training-status-report p,
+  .muted,
+  .error {
+    word-break: break-word;
+  }
+
+  .training-card .card-header {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .training-card .card-header > div {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .training-card .card-header button {
+    width: 100%;
+  }
+
+  .training-card .card-header .statistics-refresh {
+    margin-left: 0;
+    align-self: flex-end;
+    width: var(--control-height);
+  }
+
+  .loading-inline {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .result.training-status-layout {
+    padding: 8px;
+  }
+
+  .training-status-layout {
+    gap: 12px;
+  }
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -866,6 +1144,113 @@ form.form-layout {
 @media (max-width: 960px) {
   .evaluation-result-row .evaluation-result-simple {
     max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .applicants-scroll {
+    max-height: 72vh;
+    overflow: auto;
+  }
+
+  .applicants-table {
+    min-width: 0;
+    display: block;
+    table-layout: auto;
+  }
+
+  .applicants-table thead {
+    display: none;
+  }
+
+  .applicants-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .applicants-table tr {
+    display: block;
+    margin-bottom: 12px;
+    border: 1px solid #e2e7f3;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
+  }
+
+  .applicants-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 12px;
+    white-space: normal;
+    border-bottom: 1px solid #eef2f7;
+    text-align: right;
+  }
+
+  .applicants-table td::before {
+    content: attr(data-label);
+    flex: 0 0 92px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475467;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .applicants-table td:last-child {
+    display: block;
+    text-align: left;
+    border-bottom: none;
+    padding: 12px;
+  }
+
+  .applicants-table td:last-child::before {
+    display: block;
+    margin-bottom: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475467;
+  }
+
+  .applicants-table td:last-child button {
+    display: block;
+    width: 100%;
+    padding: 12px 14px;
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    border: 1.5px solid #d0d5dd;
+    border-radius: 8px;
+    background: #4990e2;
+    color: white;
+    cursor: pointer;
+  }
+
+  .applicants-table td:last-child button.secondary {
+    background: #4990e2;
+    border-color: #c3cbe0;
+  }
+
+  .applicants-table td:last-child button.delete {
+    background: #e24949;
+    border-color: #c3cbe0;
+  }
+
+  .applicants-table td:last-child button:last-child {
+    margin-bottom: 0;
+  }
+
+  .applicants-table td input,
+  .applicants-table td select {
+    min-width: 0;
+    width: auto;
+    max-width: 100%;
+  }
+
+  .applicants-table td .field-error {
+    text-align: left;
   }
 }
 
