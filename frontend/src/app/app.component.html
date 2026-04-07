@@ -53,7 +53,7 @@
       <div class="form-row">
         <div class="form-field">
           <label for="evalAge">Age</label>
-          <input id="evalAge" #evalAgeModel="ngModel" [(ngModel)]="evaluationInput.age" name="evalAge" type="number" min="18" max="120" required [class.input-invalid]="evalAgeModel.invalid && evalAgeModel.dirty" />
+          <input id="evalAge" #evalAgeModel="ngModel" [(ngModel)]="evaluationInput.age" name="evalAge" type="number" step="1" min="18" max="120" inputmode="numeric" enterkeyhint="next" required [class.input-invalid]="evalAgeModel.invalid && evalAgeModel.dirty" />
           <p class="field-error" *ngIf="evalAgeModel.dirty && evalAgeModel.errors?.['required']">Age is required</p>
           <p class="field-error" *ngIf="evalAgeModel.dirty && (evalAgeModel.errors?.['min'] || evalAgeModel.errors?.['max'])">Age must be between 18 and 120</p>
         </div>
@@ -73,7 +73,7 @@
         </div>
         <div class="form-field">
           <label for="evalChildren">Children</label>
-          <input id="evalChildren" #evalChildrenModel="ngModel" [(ngModel)]="evaluationInput.children" name="evalChildren" type="number" min="0" max="10" required [class.input-invalid]="evalChildrenModel.invalid && evalChildrenModel.dirty" />
+          <input id="evalChildren" #evalChildrenModel="ngModel" [(ngModel)]="evaluationInput.children" name="evalChildren" type="number" step="1" min="0" max="10" inputmode="numeric" enterkeyhint="next" required [class.input-invalid]="evalChildrenModel.invalid && evalChildrenModel.dirty" />
           <p class="field-error" *ngIf="evalChildrenModel.dirty && evalChildrenModel.errors?.['required']">Children is required</p>
           <p class="field-error" *ngIf="evalChildrenModel.dirty && (evalChildrenModel.errors?.['min'] || evalChildrenModel.errors?.['max'])">Children must be between 0 and 10</p>
         </div>
@@ -89,13 +89,13 @@
         </div>
         <div class="form-field">
           <label for="evalHeight">Height ({{ evaluationInput.unitSystem === 'metric' ? 'cm' : 'in' }})</label>
-          <input id="evalHeight" [(ngModel)]="evaluationInput.height" name="evalHeight" type="number" step="1" min="1" required #evalHeightModel="ngModel" [class.input-invalid]="evalHeightModel.invalid && evalHeightModel.dirty" (keydown)="blockNonIntegerInput($event)" />
+          <input id="evalHeight" [(ngModel)]="evaluationInput.height" name="evalHeight" type="number" step="1" min="1" inputmode="numeric" enterkeyhint="next" required #evalHeightModel="ngModel" [class.input-invalid]="evalHeightModel.invalid && evalHeightModel.dirty" (keydown)="blockNonIntegerInput($event)" />
           <p class="field-error" *ngIf="evalHeightModel.dirty && evalHeightModel.errors?.['required']">Height is required</p>
           <p class="field-error" *ngIf="evalHeightModel.dirty && (evalHeightModel.errors?.['min'] || evalHeightModel.errors?.['integer'])">Height must be a positive integer</p>
         </div>
         <div class="form-field">
           <label for="evalWeight">Weight ({{ evaluationInput.unitSystem === 'metric' ? 'kg' : 'lb' }})</label>
-          <input id="evalWeight" [(ngModel)]="evaluationInput.weight" name="evalWeight" type="number" step="1" min="1" required #evalWeightModel="ngModel" [class.input-invalid]="evalWeightModel.invalid && evalWeightModel.dirty" (keydown)="blockNonIntegerInput($event)" />
+          <input id="evalWeight" [(ngModel)]="evaluationInput.weight" name="evalWeight" type="number" step="1" min="1" inputmode="numeric" enterkeyhint="done" required #evalWeightModel="ngModel" [class.input-invalid]="evalWeightModel.invalid && evalWeightModel.dirty" (keydown)="blockNonIntegerInput($event)" />
           <p class="field-error" *ngIf="evalWeightModel.dirty && evalWeightModel.errors?.['required']">Weight is required</p>
           <p class="field-error" *ngIf="evalWeightModel.dirty && (evalWeightModel.errors?.['min'] || evalWeightModel.errors?.['integer'])">Weight must be a positive integer</p>
         </div>
@@ -160,8 +160,11 @@
           [(ngModel)]="applicantInput.age"
           name="appAge"
           type="number"
+          step="1"
           min="18"
           max="120"
+          inputmode="numeric"
+          enterkeyhint="next"
           required
           [class.input-invalid]="appAgeModel.invalid && appAgeModel.dirty"
         />
@@ -192,8 +195,11 @@
           [(ngModel)]="applicantInput.children"
           name="appChildren"
           type="number"
+          step="1"
           min="0"
           max="10"
+          inputmode="numeric"
+          enterkeyhint="next"
           required
           [class.input-invalid]="appChildrenModel.invalid && appChildrenModel.dirty"
         />
@@ -216,13 +222,13 @@
       </div>
       <div class="form-field">
         <label for="appHeight">Height ({{ applicantInput.unitSystem === 'metric' ? 'cm' : 'in' }})</label>
-        <input id="appHeight" [(ngModel)]="applicantInput.height" name="appHeight" type="number" step="1" min="1" required #appHeightModel="ngModel" [class.input-invalid]="appHeightModel.invalid && appHeightModel.dirty" (keydown)="blockNonIntegerInput($event)" />
+        <input id="appHeight" [(ngModel)]="applicantInput.height" name="appHeight" type="number" step="1" min="1" inputmode="numeric" enterkeyhint="next" required #appHeightModel="ngModel" [class.input-invalid]="appHeightModel.invalid && appHeightModel.dirty" (keydown)="blockNonIntegerInput($event)" />
         <p class="field-error" *ngIf="appHeightModel.dirty && appHeightModel.errors?.['required']">Height is required</p>
         <p class="field-error" *ngIf="appHeightModel.dirty && (appHeightModel.errors?.['min'] || appHeightModel.errors?.['integer'])">Height must be a positive integer</p>
       </div>
       <div class="form-field">
         <label for="appWeight">Weight ({{ applicantInput.unitSystem === 'metric' ? 'kg' : 'lb' }})</label>
-        <input id="appWeight" [(ngModel)]="applicantInput.weight" name="appWeight" type="number" step="1" min="1" required #appWeightModel="ngModel" [class.input-invalid]="appWeightModel.invalid && appWeightModel.dirty" (keydown)="blockNonIntegerInput($event)" />
+        <input id="appWeight" [(ngModel)]="applicantInput.weight" name="appWeight" type="number" step="1" min="1" inputmode="numeric" enterkeyhint="done" required #appWeightModel="ngModel" [class.input-invalid]="appWeightModel.invalid && appWeightModel.dirty" (keydown)="blockNonIntegerInput($event)" />
         <p class="field-error" *ngIf="appWeightModel.dirty && appWeightModel.errors?.['required']">Weight is required</p>
         <p class="field-error" *ngIf="appWeightModel.dirty && (appWeightModel.errors?.['min'] || appWeightModel.errors?.['integer'])">Weight must be a positive integer</p>
       </div>
@@ -250,6 +256,8 @@
             type="number"
             min="1"
             step="1"
+            inputmode="numeric"
+            enterkeyhint="search"
             aria-label="Search by applicant ID"
             placeholder="Search ID"
           />
@@ -373,8 +381,10 @@
               <ng-container *ngIf="editingApplicantId === a.id; else ageText">
                 <input
                   type="number"
+                  step="1"
                   min="18"
                   max="120"
+                  inputmode="numeric"
                   [(ngModel)]="applicantEditInput!.age"
                   [name]="'editAge' + a.id"
                 />
@@ -396,6 +406,7 @@
                   type="number"
                   step="0.1"
                   min="1"
+                  inputmode="decimal"
                   [(ngModel)]="applicantEditInput!.bmi"
                   [name]="'editBmi' + a.id"
                 />
@@ -406,8 +417,10 @@
               <ng-container *ngIf="editingApplicantId === a.id; else childrenText">
                 <input
                   type="number"
+                  step="1"
                   min="0"
                   max="10"
+                  inputmode="numeric"
                   [(ngModel)]="applicantEditInput!.children"
                   [name]="'editChildren' + a.id"
                 />

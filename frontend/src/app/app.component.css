@@ -714,6 +714,12 @@ form.grid button {
     max-width: none;
   }
 
+  input[type='number'] {
+    min-height: 44px;
+    font-size: 16px;
+    touch-action: manipulation;
+  }
+
   .applicants-scroll {
     border-radius: 8px;
     -webkit-overflow-scrolling: touch;
@@ -1402,6 +1408,12 @@ form.form-layout {
     min-width: 0;
     width: auto;
     max-width: 100%;
+  }
+
+  .applicants-table td input[type='number'] {
+    width: 100%;
+    min-height: 40px;
+    font-size: 16px;
   }
 
   .applicants-table td .field-error {
