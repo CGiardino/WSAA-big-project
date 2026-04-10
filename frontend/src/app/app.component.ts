@@ -23,6 +23,7 @@ import {
   TrainingStatusResponse,
 } from './api.service';
 import { TimeoutInterceptor } from './timeout.interceptor';
+import { isAuthEnabled, logout } from './auth.service';
 
 type UnitSystem = 'metric' | 'imperial';
 type AppTab = 'evaluation' | 'applicants' | 'statistics' | 'training';
@@ -99,6 +100,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   activeTab: AppTab = 'evaluation';
   tabsExpanded = false;
+  authEnabled = isAuthEnabled();
 
   // Applicants tab state (table, paging, search, and edit workflow).
   applicants: Applicant[] = [];
@@ -207,6 +209,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
   toggleTabs(): void {
     this.tabsExpanded = !this.tabsExpanded;
+  }
+
+  onLogoutClick(): void {
+    void logout().catch((error: unknown) => {
+      console.error('Logout failed', error);
+    });
   }
 
   @HostListener('window:hashchange')

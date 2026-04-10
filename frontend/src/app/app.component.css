@@ -101,6 +101,24 @@
   gap: 4px;
 }
 
+.tabs-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logout-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.logout-button svg {
+  flex: 0 0 auto;
+}
+
 .tab-toggle {
   display: none;
 }
@@ -515,6 +533,12 @@ form.grid button {
     gap: 12px;
   }
 
+  .tabs-actions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
   .brand {
     min-width: 0;
   }
@@ -599,7 +623,6 @@ form.grid button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-left: auto;
     padding: 10px 14px;
     border: 1px solid #eaecf0;
     border-radius: 10px;
@@ -608,6 +631,24 @@ form.grid button {
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
+  }
+
+  .tabs-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .tabs-actions .logout-button,
+  .tabs-actions .tab-toggle {
+    width: auto;
+  }
+
+  .tabs-actions .logout-button {
+    order: 2;
+  }
+
+  .tabs-actions .tab-toggle {
+    order: 1;
   }
 
   .tabs:not(.tabs-expanded) .tab-links {
@@ -1463,4 +1504,3 @@ form.form-layout {
     min-width: 0;
   }
 }
-

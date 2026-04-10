@@ -3,6 +3,7 @@ import {
   InteractionRequiredAuthError,
   PublicClientApplication,
   type AuthenticationResult,
+  type EndSessionRequest,
 } from '@azure/msal-browser';
 
 interface AuthRuntimeConfig {
@@ -111,5 +112,19 @@ export async function getAccessToken(): Promise<string | undefined> {
   }
 }
 
+export async function logout(): Promise<void> {
+  if (!authConfig.enabled) {
+    return;
+  }
 
-
+  const client = getMsalInstance();
+  await client.initialize();
+  const account = getAccount();
+  const request: EndSessionRequest = {
+    postLogoutRedirectUri: window.location.origin,
+  };
+  if (account !== null) {
+    request.account = account;
+  }
+  await client.logoutRedirect(request);
+}
