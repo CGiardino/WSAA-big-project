@@ -275,31 +275,45 @@
 
       <form class="applicant-search applicant-search-inline" (ngSubmit)="searchApplicantById()">
         <div class="applicant-search-controls">
-          <input
-            id="applicantSearchId"
-            [(ngModel)]="applicantSearchIdInput"
-            name="applicantSearchId"
-            type="number"
-            min="1"
-            step="1"
-            inputmode="numeric"
-            enterkeyhint="search"
-            aria-label="Search by applicant ID"
-            placeholder="Search ID"
-            (focus)="selectAllOnFocus($event)"
-          />
-          <button type="submit" class="button-with-icon" [disabled]="applicantSearching">
+          <div class="applicant-search-input-wrap">
+            <input
+              id="applicantSearchId"
+              [(ngModel)]="applicantSearchIdInput"
+              name="applicantSearchId"
+              type="number"
+              min="1"
+              step="1"
+              inputmode="numeric"
+              enterkeyhint="search"
+              aria-label="Search by applicant ID"
+              placeholder="Search ID"
+              (focus)="selectAllOnFocus($event)"
+            />
+            <button
+              *ngIf="applicantSearchIdInput !== null || applicantSearchActive"
+              type="button"
+              class="icon-button applicant-search-clear-button"
+              (click)="clearApplicantSearch()"
+              [disabled]="applicantSearching"
+              aria-label="Clear applicant search"
+              title="Clear applicant search"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <button
+            type="submit"
+            class="button-with-icon"
+            [disabled]="applicantSearching"
+            [attr.aria-label]="applicantSearching ? 'Searching applicants' : 'Search applicant'"
+            [attr.title]="applicantSearching ? 'Searching applicants' : 'Search applicant'"
+          >
             <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/>
               <path d="M20 20l-3.5-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
-            <span>{{ applicantSearching ? 'Searching...' : 'Search' }}</span>
-          </button>
-          <button type="button" class="secondary button-with-icon" (click)="clearApplicantSearch()" [disabled]="applicantSearching">
-            <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <span>Clear</span>
           </button>
         </div>
       </form>

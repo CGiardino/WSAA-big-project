@@ -296,10 +296,36 @@
   width: 160px;
   min-width: 160px;
   max-width: 160px;
-  padding: 10px 12px;
+  padding: 10px 36px 10px 12px;
   border: 1.5px solid #d0d5dd;
   border-radius: 8px;
   font-size: 14px;
+}
+
+.applicant-search-input-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.applicant-search-clear-button {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0;
+  background: transparent;
+  color: #667085;
+  border-radius: 999px;
+}
+
+.applicant-search-clear-button svg {
+  display: block;
+  width: 14px;
+  height: 14px;
 }
 
 .applicant-search-controls input:focus {
