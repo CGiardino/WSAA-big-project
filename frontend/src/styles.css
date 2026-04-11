@@ -18,7 +18,7 @@ body {
   color: #1d2433;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 960px) {
   body {
     background-attachment: scroll;
     background-position: center top;
