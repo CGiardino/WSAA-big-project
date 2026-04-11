@@ -32,12 +32,16 @@
 
       <button
         type="button"
-        class="tab-toggle"
+        class="tab-toggle button-with-icon"
         [attr.aria-expanded]="tabsExpanded"
         aria-controls="main-tab-links"
         (click)="toggleTabs()"
       >
-        {{ tabsExpanded ? 'Hide tabs' : 'Show tabs' }}
+        <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path *ngIf="!tabsExpanded" d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path *ngIf="tabsExpanded" d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>{{ tabsExpanded ? 'Hide tabs' : 'Show tabs' }}</span>
       </button>
     </div>
   </nav>
@@ -111,7 +115,12 @@
           <p class="field-error" *ngIf="evalWeightModel.dirty && (evalWeightModel.errors?.['min'] || evalWeightModel.errors?.['integer'])">Weight must be a positive integer</p>
         </div>
         <div class="form-field form-field-button evaluation-inline-actions">
-          <button type="submit" [disabled]="evaluationCreating">Evaluate Risk</button>
+          <button type="submit" class="button-with-icon" [disabled]="evaluationCreating">
+            <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6l7-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Evaluate Risk</span>
+          </button>
         </div>
       </div>
 
@@ -250,9 +259,13 @@
     <div class="applicants-action-row">
       <button
         type="submit"
+        class="button-with-icon"
         form="applicantCreateForm"
         [disabled]="applicantCreating || applicantCreateFormRef.invalid">
-        Create Applicant
+        <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span>Create Applicant</span>
       </button>
       <!-- Spinner row: show only while creating applicant -->
       <div class="spinner-container" *ngIf="applicantCreating">
@@ -275,11 +288,18 @@
             placeholder="Search ID"
             (focus)="selectAllOnFocus($event)"
           />
-          <button type="submit" [disabled]="applicantSearching">
-            {{ applicantSearching ? 'Searching...' : 'Search' }}
+          <button type="submit" class="button-with-icon" [disabled]="applicantSearching">
+            <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/>
+              <path d="M20 20l-3.5-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>{{ applicantSearching ? 'Searching...' : 'Search' }}</span>
           </button>
-          <button type="button" class="secondary" (click)="clearApplicantSearch()" [disabled]="applicantSearching">
-            Clear
+          <button type="button" class="secondary button-with-icon" (click)="clearApplicantSearch()" [disabled]="applicantSearching">
+            <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>Clear</span>
           </button>
         </div>
       </form>
@@ -310,7 +330,7 @@
     </div>
 
 
-    <p class="muted" *ngIf="applicantSearchActive && applicantSearchId !== null && !applicantError">
+    <p class="muted applicant-search-status" *ngIf="applicantSearchActive && applicantSearchId !== null && !applicantError">
       Search results for applicant ID {{ applicantSearchId }}
     </p>
 
@@ -383,12 +403,16 @@
               </span>
               <button
                 type="button"
-                class="secondary applicant-card-toggle"
+                class="secondary applicant-card-toggle button-with-icon"
                 (click)="toggleApplicantExpanded(a.id)"
                 [attr.aria-expanded]="isApplicantExpanded(a.id)"
                 [attr.aria-label]="isApplicantExpanded(a.id) ? 'Collapse applicant ' + a.id : 'Expand applicant ' + a.id"
               >
-                {{ isApplicantExpanded(a.id) ? 'Hide details' : 'Show details' }}
+                <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path *ngIf="!isApplicantExpanded(a.id)" d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path *ngIf="isApplicantExpanded(a.id)" d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>{{ isApplicantExpanded(a.id) ? 'Hide details' : 'Show details' }}</span>
               </button>
             </td>
             <td data-label="Age">
@@ -458,23 +482,41 @@
               <ng-container *ngIf="editingApplicantId === a.id; else defaultActions">
                 <button
                   type="button"
+                  class="button-with-icon"
                   [disabled]="savingApplicantId === a.id"
                   (click)="saveApplicantUpdate(a.id)"
                 >
-                  {{ savingApplicantId === a.id ? 'Saving...' : 'Save' }}
+                  <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M5 3h11l3 3v15H5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M9 3v6h6V3" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                  </svg>
+                  <span>{{ savingApplicantId === a.id ? 'Saving...' : 'Save' }}</span>
                 </button>
                 <button
                   type="button"
-                  class="secondary"
+                  class="secondary button-with-icon"
                   [disabled]="savingApplicantId === a.id"
                   (click)="cancelEditApplicant()"
                 >
-                  Cancel
+                  <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  <span>Cancel</span>
                 </button>
               </ng-container>
               <ng-template #defaultActions>
-                <button type="button" class="secondary" (click)="startEditApplicant(a)">Edit</button>
-                <button type="button" class="delete" (click)="removeApplicant(a.id)">Delete</button>
+                <button type="button" class="secondary button-with-icon" (click)="startEditApplicant(a)">
+                  <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M3 17.25V21h3.75L19.8 7.95l-3.75-3.75L3 17.25z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                  </svg>
+                  <span>Edit</span>
+                </button>
+                <button type="button" class="delete button-with-icon" (click)="removeApplicant(a.id)">
+                  <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M4 7h16M9 7V4h6v3M8 7l1 13h6l1-13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span>Delete</span>
+                </button>
               </ng-template>
             </td>
           </tr>
@@ -556,6 +598,11 @@
         (keydown.space)="openPlotModal(plot); $event.preventDefault()"
       >
         <img *ngIf="getPlotImageUrl(plot.name) as plotImageUrl" [src]="plotImageUrl" [alt]="getPlotLabel(plot.name)" loading="lazy" />
+        <span class="plot-open-indicator" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="16" height="16" focusable="false">
+            <path d="M15 3h6v6M21 3l-8 8M9 21H3v-6M3 21l8-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
         <p class="muted" *ngIf="!getPlotImageUrl(plot.name) && !hasPlotLoadError(plot.name)">Loading plot...</p>
         <p class="error muted" *ngIf="hasPlotLoadError(plot.name)">Plot unavailable</p>
         <figcaption>{{ getPlotLabel(plot.name) }}</figcaption>
@@ -568,7 +615,12 @@
     <div class="image-modal" role="dialog" aria-modal="true" [attr.aria-label]="selectedPlotName || 'Plot preview'">
       <div class="image-modal-header">
         <h3>{{ selectedPlotName }}</h3>
-        <button type="button" class="secondary" (click)="closePlotModal()">Close</button>
+        <button type="button" class="secondary button-with-icon" (click)="closePlotModal()">
+          <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>Close</span>
+        </button>
       </div>
       <img *ngIf="selectedPlotUrl" [src]="selectedPlotUrl" [alt]="selectedPlotName || 'Selected plot'" />
       <p class="muted" *ngIf="!selectedPlotUrl && !selectedPlotError">Loading plot...</p>
@@ -580,7 +632,13 @@
   <section class="card training-card" *ngIf="activeTab === 'training'">
     <div class="card-header">
       <div style="display: flex; align-items: center; gap: 12px;">
-        <button type="button" (click)="runTraining()" [disabled]="trainingInProgress">Re-Train Model</button>
+        <button type="button" class="button-with-icon" (click)="runTraining()" [disabled]="trainingInProgress">
+          <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M4 4v6h6M20 20v-6h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M20 10a8 8 0 0 0-13.66-5.66L4 6M4 14a8 8 0 0 0 13.66 5.66L20 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Re-Train Model</span>
+        </button>
         <div class="loading-inline" *ngIf="trainingInProgress" aria-live="polite">
           <span class="spinner" aria-hidden="true"></span>
           <span>Training in progress... please wait.</span>
@@ -683,8 +741,18 @@
       <h2>Confirm Delete</h2>
       <p>Are you sure you want to delete applicant with ID <strong>{{ deleteApplicantId }}</strong>?</p>
       <div class="modal-actions">
-        <button type="button" class="danger" (click)="confirmDeleteApplicant()">Confirm</button>
-        <button type="button" (click)="cancelDeleteApplicant()">Cancel</button>
+        <button type="button" class="danger button-with-icon" (click)="confirmDeleteApplicant()">
+          <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M5 13l4 4L19 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Confirm</span>
+        </button>
+        <button type="button" class="button-with-icon" (click)="cancelDeleteApplicant()">
+          <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>Cancel</span>
+        </button>
       </div>
     </div>
   </div>

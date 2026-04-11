@@ -111,7 +111,7 @@
 .logout-button {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   white-space: nowrap;
 }
 
@@ -173,6 +173,41 @@
 
 .icon-button svg {
   display: block;
+  width: 16px;
+  height: 16px;
+}
+
+.button-with-icon {
+  --button-icon-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  line-height: 1;
+}
+
+.button-icon {
+  width: var(--button-icon-size);
+  height: var(--button-icon-size);
+  flex: 0 0 auto;
+  display: block;
+  stroke-width: 2;
+}
+
+.applicants-table td .button-with-icon {
+  --button-icon-size: 14px;
+  gap: 2px;
+}
+
+.button-with-icon > span {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.1;
+}
+
+/* Keep tabs toggle hidden on desktop; mobile media query explicitly shows it. */
+.tab-toggle.button-with-icon {
+  display: none;
 }
 
 .icon-button:hover:not(:disabled) {
@@ -458,6 +493,30 @@ form.grid button {
   background: #fff;
   cursor: zoom-in;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+}
+
+.plot-open-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(16, 24, 40, 0.68);
+  color: #fff;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.plot-card:hover .plot-open-indicator,
+.plot-card:focus-visible .plot-open-indicator {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .plot-card:hover {
@@ -619,7 +678,7 @@ form.grid button {
     max-width: 100%;
   }
 
-  .tab-toggle {
+  .tab-toggle.button-with-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1129,6 +1188,11 @@ tr.new-applicant-highlight.risk-high td {
   padding: 10px;
 }
 
+.applicant-search-status {
+  padding: 0;
+  margin: 8px 0;
+}
+
 .loading-inline {
   display: inline-flex;
   align-items: center;
@@ -1415,7 +1479,9 @@ form.form-layout {
   }
 
   .applicants-table td:last-child {
-    display: block;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
     text-align: left;
     border-bottom: none;
     padding: 12px;
@@ -1423,17 +1489,21 @@ form.form-layout {
 
   .applicants-table td:last-child::before {
     display: block;
-    margin-bottom: 12px;
+    grid-column: 1 / -1;
+    margin-bottom: 0;
     font-size: 12px;
     font-weight: 600;
     color: #475467;
   }
 
   .applicants-table td:last-child button {
-    display: block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
     width: 100%;
     padding: 12px 14px;
-    margin: 0 0 10px 0;
+    margin: 0;
     font-size: 14px;
     border: 1.5px solid #d0d5dd;
     border-radius: 8px;
@@ -1454,6 +1524,11 @@ form.form-layout {
 
   .applicants-table td:last-child button:last-child {
     margin-bottom: 0;
+  }
+
+  .applicants-table td:last-child .button-with-icon {
+    --button-icon-size: 15px;
+    gap: 6px;
   }
 
   .applicants-table td input,
