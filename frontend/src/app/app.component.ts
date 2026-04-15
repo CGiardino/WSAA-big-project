@@ -442,7 +442,7 @@ export class AppComponent implements OnInit, OnDestroy {
         this.applicantTotal = 0;
         this.applicantOffset = 0;
         this.hasMoreApplicants = false;
-        this.applicantError = err?.status === 404 ? 'Applicant not found' : err?.error?.detail ?? 'Failed to search applicant';
+        this.applicantError = err?.status === 404 ? '' : err?.error?.detail ?? 'Failed to search applicant';
         this.applicantSearching = false;
       },
     });
