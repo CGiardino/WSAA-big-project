@@ -182,8 +182,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 1px;
+  position: relative;
   line-height: 1;
+}
+
+.button-with-icon > .button-icon:first-child:not(:last-child) {
+  transform: translateX(-3px);
 }
 
 .button-icon {
@@ -196,13 +201,15 @@
 
 .applicants-table td .button-with-icon {
   --button-icon-size: 14px;
-  gap: 2px;
+  gap: 1px;
 }
 
 .button-with-icon > span {
   display: inline-flex;
   align-items: center;
-  line-height: 1.1;
+  justify-content: center;
+  text-align: center;
+  line-height: 1;
 }
 
 /* Keep tabs toggle hidden on desktop; mobile media query explicitly shows it. */
@@ -1107,6 +1114,8 @@ td select {
 }
 
 .applicants-table td:last-child button {
+  width: calc(50% - 3px);
+  justify-content: center;
   margin-right: 6px;
 }
 
@@ -1525,7 +1534,7 @@ form.form-layout {
   .applicants-table td:last-child button {
     display: inline-flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     gap: 6px;
     width: 100%;
     padding: 12px 14px;

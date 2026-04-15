@@ -320,6 +320,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.escape')
   onEscapeKey(): void {
+    if (this.showDeleteModal) {
+      this.cancelDeleteApplicant();
+      return;
+    }
     if (this.selectedPlotName !== null) {
       this.closePlotModal();
     }
