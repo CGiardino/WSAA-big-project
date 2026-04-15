@@ -200,7 +200,7 @@
 }
 
 .applicants-table td .button-with-icon {
-  --button-icon-size: 14px;
+  --button-icon-size: 15px;
   gap: 1px;
 }
 
@@ -209,7 +209,7 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  line-height: 1;
+  transform: translateX(-3px);
 }
 
 /* Keep tabs toggle hidden on desktop; mobile media query explicitly shows it. */
