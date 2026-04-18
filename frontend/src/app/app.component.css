@@ -511,6 +511,154 @@ form.grid button {
   font-weight: 600;
 }
 
+.risk-chart-section {
+  margin: 8px 0 14px;
+}
+
+.risk-chart-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+
+.risk-panel {
+  border: 1px solid #e2e7f3;
+  border-radius: 10px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.risk-panel h4 {
+  margin: 0 0 10px;
+  color: #344054;
+  font-size: 14px;
+}
+
+.risk-bar-list {
+  display: grid;
+  gap: 10px;
+}
+
+.risk-bar-row {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.risk-bar-label,
+.risk-bar-value {
+  font-size: 14px;
+  color: #344054;
+}
+
+.risk-bar-value {
+  font-weight: 600;
+  color: #101828;
+}
+
+.risk-bar-track {
+  height: 12px;
+  border-radius: 999px;
+  background: #eef2f7;
+  overflow: hidden;
+}
+
+.risk-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.risk-pie-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 24px;
+}
+
+.risk-pie {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  border: 1px solid #e2e7f3;
+  position: relative;
+  overflow: visible;
+}
+
+.risk-pie-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  line-height: 1.1;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.risk-pie-label-inside {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.risk-pie-label-outside {
+  font-size: 11px;
+  font-weight: 700;
+  color: #111827;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 999px;
+  padding: 2px 5px;
+}
+
+.risk-pie-label-right {
+  transform: translate(2px, -50%);
+  text-align: left;
+}
+
+.risk-pie-label-left {
+  transform: translate(calc(-100% - 2px), -50%);
+  text-align: right;
+}
+
+.risk-pie-total {
+  margin: 0;
+  padding: 0;
+}
+
+.risk-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.risk-legend li {
+  display: grid;
+  grid-template-columns: 12px minmax(90px, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.risk-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.risk-legend-label {
+  color: #344054;
+  font-size: 14px;
+}
+
+.risk-legend-value,
+.risk-legend-percent {
+  color: #101828;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .plot-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -676,6 +824,14 @@ form.grid button {
 
   .hero {
     grid-template-columns: 1fr;
+  }
+
+  .risk-chart-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .risk-bar-row {
+    grid-template-columns: 64px 1fr auto;
   }
 }
 

@@ -586,20 +586,53 @@
       </article>
     </div>
 
-    <table *ngIf="statisticsSummary && !statisticsLoading">
-      <thead>
-        <tr>
-          <th>Risk</th>
-          <th>Count</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of statisticsSummary.risk_distribution">
-          <td>{{ item.risk_category }}</td>
-          <td>{{ item.count }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <section class="risk-chart-section" *ngIf="statisticsSummary && !statisticsLoading">
+      <h3>Current Risk Distribution</h3>
+      <div class="risk-chart-layout">
+        <div class="risk-panel" aria-label="Bar chart of risk counts">
+          <h4>Counts</h4>
+          <div class="risk-bar-list">
+            <div class="risk-bar-row" *ngFor="let item of statisticsSummary.risk_distribution">
+              <span class="risk-bar-label">{{ item.risk_category }}</span>
+              <div class="risk-bar-track" role="img" [attr.aria-label]="item.risk_category + ' count ' + item.count">
+                <div class="risk-bar-fill" [style.width.%]="getRiskBarWidthPercent(item.count)" [style.background-color]="getRiskCategoryColor(item.risk_category)"></div>
+              </div>
+              <span class="risk-bar-value">{{ item.count }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="risk-panel" aria-label="Pie chart of risk percentages">
+          <h4>Percentages</h4>
+          <div class="risk-pie-wrap">
+            <div
+              class="risk-pie"
+              [style.background]="getRiskPieChartBackground()"
+              role="img"
+              aria-label="Pie chart of current risk distribution percentages"
+            >
+              <span
+                class="risk-pie-label risk-pie-label-inside"
+                *ngFor="let label of getRiskPieLabels()"
+                [style.left.%]="label.insideLeft"
+                [style.top.%]="label.insideTop"
+              >
+                {{ label.percentText }}
+              </span>
+              <span
+                class="risk-pie-label risk-pie-label-outside"
+                *ngFor="let label of getRiskPieLabels()"
+                [style.left.%]="label.outsideLeft"
+                [style.top.%]="label.outsideTop"
+                [ngClass]="'risk-pie-label-' + label.side"
+              >
+                {{ label.label }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <details *ngIf="!statisticsLoading" class="statistics-plots-section" open>
       <summary><strong>Neural Network Training Statistics</strong></summary>

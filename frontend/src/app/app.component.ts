@@ -98,6 +98,12 @@ export class AppComponent implements OnInit, OnDestroy {
     '11_per_risk_performance.png': 'Performance by Risk Category',
   };
 
+  private readonly riskChartColors: Record<string, string> = {
+    Low: '#16a34a',
+    Medium: '#f59e0b',
+    High: '#ef4444',
+  };
+
   activeTab: AppTab = 'evaluation';
   tabsExpanded = false;
   authEnabled = isAuthEnabled();
@@ -269,6 +275,148 @@ export class AppComponent implements OnInit, OnDestroy {
         this.statisticsLoading = false;
       },
     });
+  }
+
+  getRiskDistributionTotal(): number {
+    if (this.statisticsSummary === null) {
+      return 0;
+    }
+    return this.statisticsSummary.risk_distribution.reduce((sum, item) => sum + Number(item.count || 0), 0);
+  }
+
+  getRiskCategoryColor(riskCategory: string): string {
+    return this.riskChartColors[riskCategory] ?? '#9ca3af';
+  }
+
+  getRiskDistributionPercent(count: number): number {
+    const total = this.getRiskDistributionTotal();
+    if (total <= 0) {
+      return 0;
+    }
+    return Number(count || 0) / total;
+  }
+
+  getRiskDistributionMaxCount(): number {
+    if (this.statisticsSummary === null || this.statisticsSummary.risk_distribution.length === 0) {
+      return 0;
+    }
+    return Math.max(...this.statisticsSummary.risk_distribution.map((item) => Number(item.count || 0)));
+  }
+
+  getRiskBarWidthPercent(count: number): number {
+    const maxCount = this.getRiskDistributionMaxCount();
+    if (maxCount <= 0) {
+      return 0;
+    }
+    return (Number(count || 0) / maxCount) * 100;
+  }
+
+  getRiskPieChartBackground(): string {
+    if (this.statisticsSummary === null) {
+      return 'conic-gradient(#e5e7eb 0deg 360deg)';
+    }
+
+    const items = this.statisticsSummary.risk_distribution;
+    const total = this.getRiskDistributionTotal();
+    if (total <= 0 || items.length === 0) {
+      return 'conic-gradient(#e5e7eb 0deg 360deg)';
+    }
+
+    let cumulative = 0;
+    const slices: string[] = [];
+    for (const item of items) {
+      const value = Number(item.count || 0);
+      if (value <= 0) {
+        continue;
+      }
+      const start = (cumulative / total) * 360;
+      cumulative += value;
+      const end = (cumulative / total) * 360;
+      slices.push(`${this.getRiskCategoryColor(item.risk_category)} ${start}deg ${end}deg`);
+    }
+
+    if (slices.length === 0) {
+      return 'conic-gradient(#e5e7eb 0deg 360deg)';
+    }
+    return `conic-gradient(${slices.join(', ')})`;
+  }
+
+  getRiskPieLabels(): Array<{
+    label: string;
+    percentText: string;
+    insideLeft: number;
+    insideTop: number;
+    outsideLeft: number;
+    outsideTop: number;
+    side: 'left' | 'right';
+  }> {
+    if (this.statisticsSummary === null) {
+      return [];
+    }
+
+    const items = this.statisticsSummary.risk_distribution;
+    const total = this.getRiskDistributionTotal();
+    if (total <= 0 || items.length === 0) {
+      return [];
+    }
+
+    const labels: Array<{
+      label: string;
+      percentText: string;
+      insideLeft: number;
+      insideTop: number;
+      outsideLeft: number;
+      outsideTop: number;
+      side: 'left' | 'right';
+    }> = [];
+    let cumulative = 0;
+    // Coordinates are in percent of the pie box (0-100), so keep radii near 50.
+    const insideRadius = 34;
+    const outsideRadius = 62;
+    const minHorizontalGap = 18;
+
+    for (const item of items) {
+      const value = Number(item.count || 0);
+      if (value <= 0) {
+        continue;
+      }
+
+      const startDeg = (cumulative / total) * 360;
+      cumulative += value;
+      const endDeg = (cumulative / total) * 360;
+      const midDeg = (startDeg + endDeg) / 2;
+      // CSS conic-gradient starts at 12 o'clock, so shift coordinates by -90 degrees.
+      const radians = ((midDeg - 90) * Math.PI) / 180;
+
+      const cosine = Math.cos(radians);
+      const sine = Math.sin(radians);
+      const insideLeft = 50 + insideRadius * cosine;
+      const insideTop = 50 + insideRadius * sine;
+      const rawOutsideLeft = 50 + outsideRadius * cosine;
+      let outsideLeft = rawOutsideLeft;
+      if (Math.abs(cosine) < 0.4) {
+        // Keep near-vertical labels readable while preserving equal radial distance.
+        const direction = cosine >= 0 ? 1 : -1;
+        const minX = 50 + direction * minHorizontalGap;
+        outsideLeft = direction > 0 ? Math.max(rawOutsideLeft, minX) : Math.min(rawOutsideLeft, minX);
+      }
+
+      const horizontalDelta = outsideLeft - 50;
+      const verticalMagnitude = Math.sqrt(Math.max(0, outsideRadius * outsideRadius - horizontalDelta * horizontalDelta));
+      const outsideTop = 50 + (sine >= 0 ? verticalMagnitude : -verticalMagnitude);
+
+      labels.push({
+        label: item.risk_category,
+        percentText: `${Math.round(this.getRiskDistributionPercent(value) * 100)}%`,
+        insideLeft,
+        insideTop,
+        outsideLeft,
+        outsideTop,
+        side: outsideLeft >= 50 ? 'right' : 'left',
+      });
+    }
+
+    return labels;
   }
 
   getPlotImageUrl(plotName: string): string | null {
