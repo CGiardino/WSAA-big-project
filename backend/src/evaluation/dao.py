@@ -3,7 +3,7 @@
 import tempfile
 from pathlib import Path
 
-from src.health_insurance_risk_classifier import evaluate_risk_with_best_model
+from src.risk_classifier import evaluate_risk_with_best_model
 from src.storage.dao import StorageDAO
 
 

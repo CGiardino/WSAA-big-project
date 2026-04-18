@@ -3,7 +3,7 @@
 from src.generated.server_stubs.apis.health_api_base import BaseHealthApi
 from src.generated.server_stubs.models.health_response import HealthResponse
 from fastapi import HTTPException
-from src.db import get_connection
+from src.utils.db_utils import get_connection
 
 class HealthApiImpl(BaseHealthApi):
     """Performs lightweight readiness checks for DB connectivity."""

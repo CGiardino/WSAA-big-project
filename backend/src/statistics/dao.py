@@ -7,7 +7,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from src.db import get_connection
+from src.utils.db_utils import get_connection
 from src.storage.dao import StorageDAO
 
 PLOTS_BLOB_PREFIX = "plots"

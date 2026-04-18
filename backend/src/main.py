@@ -6,8 +6,7 @@ import os
 from fastapi import Depends, FastAPI  # Main FastAPI framework
 from fastapi.middleware.cors import CORSMiddleware
 
-# Import routers to register endpoints (side-effect imports)
-# Domain router imports register Base*Api implementations at import time.
+# Import domain routers (these will be registered with the FastAPI app)
 import src.applicant.router
 import src.evaluation.router
 import src.health.router
@@ -15,7 +14,7 @@ import src.metadata.router
 import src.statistics.router
 import src.training.router
 
-from src.db import ensure_schema_on_startup  # Ensures DB schema is ready
+from src.startup.bootstrap import ensure_startup_state
 # Import OpenAPI-generated routers for each API domain
 from src.generated.server_stubs.apis.applicants_api import router as applicants_router
 from src.generated.server_stubs.apis.evaluations_api import router as evaluations_router
@@ -35,7 +34,7 @@ def _get_cors_origins() -> list[str]:
 async def lifespan(_: FastAPI):
     """Run startup tasks (e.g., DB schema check) before serving requests."""
     # Ensure SQL tables/migrations are ready before the first request is handled.
-    ensure_schema_on_startup()
+    ensure_startup_state()
     yield
 
 # Create FastAPI app instance with metadata and lifespan handler

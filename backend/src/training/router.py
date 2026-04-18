@@ -8,6 +8,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from src.analytics.dataset_preparation import build_dataset, persist_dataset
 from src.generated.openapi_models import (
     Status,
     TrainingDatasetListResponse,
@@ -29,10 +30,8 @@ from src.generated.server_stubs.models.training_run_response import (
 from src.generated.server_stubs.models.training_status_response import (
     TrainingStatusResponse as StubTrainingStatusResponse,
 )
-from src.health_insurance_risk_classifier import (
-    build_dataset,
+from src.risk_classifier import (
     load_analysis_data,
-    persist_dataset,
     run_eda,
     run_training,
 )

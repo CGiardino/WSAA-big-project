@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Optional
 
-from src.health_insurance_risk_classifier import get_active_nn_model_info
+from src.risk_classifier import get_active_nn_model_info
 
 
 class MetadataDAO:

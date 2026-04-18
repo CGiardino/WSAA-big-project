@@ -6,8 +6,8 @@ from pathlib import Path
 from uuid import uuid4
 
 from src.generated.openapi_models import ApplicantCreate, ApplicantUpdate
-from src.db import get_connection
-from src.health_insurance_risk_classifier import evaluate_risk_with_best_model
+from src.utils.db_utils import get_connection
+from src.risk_classifier import evaluate_risk_with_best_model
 from src.storage.dao import StorageDAO
 
 DEFAULT_REGION = "southeast"

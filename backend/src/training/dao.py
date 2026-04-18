@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from src.db import get_connection
+from src.utils.db_utils import get_connection
 
 from datetime import datetime
 from typing import Any
