@@ -518,6 +518,22 @@ form.grid button {
   margin-top: 12px;
 }
 
+.statistics-loading {
+  width: 100%;
+  justify-content: center;
+}
+
+.statistics-card--loading {
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+}
+
+.statistics-card--loading .statistics-loading {
+  flex: 1;
+  align-items: center;
+}
+
 .statistics-plots-section {
   margin-top: 14px;
   padding: 10px 12px;
@@ -632,6 +648,10 @@ form.grid button {
 }
 
 @media (max-width: 960px) {
+  .statistics-card--loading {
+    min-height: 300px;
+  }
+
   .tabs {
     flex-direction: column;
     align-items: flex-start;

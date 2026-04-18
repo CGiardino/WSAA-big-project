@@ -543,7 +543,11 @@
   </section>
 
   <!-- Statistics tab -->
-  <section class="card" *ngIf="activeTab === 'statistics'">
+  <section
+    class="card statistics-card"
+    *ngIf="activeTab === 'statistics'"
+    [class.statistics-card--loading]="statisticsLoading"
+  >
     <div class="card-header">
       <button
         type="button"
@@ -560,7 +564,7 @@
     </div>
 
     <!-- Spinner row: show only while loading statistics -->
-    <div class="spinner-container" *ngIf="statisticsLoading">
+    <div class="spinner-container statistics-loading" *ngIf="statisticsLoading">
       <div class="loading-spinner" aria-label="Loading"></div>
       <span class="spinner-label">Loading statistics and plots...</span>
     </div>
@@ -579,10 +583,6 @@
       <article class="stat-card">
         <h3>Average BMI</h3>
         <p>{{ statisticsSummary.avg_bmi | number: '1.2-2' }}</p>
-      </article>
-      <article class="stat-card">
-        <h3>Average Charges</h3>
-        <p>{{ statisticsSummary.avg_charges | number: '1.2-2' }}</p>
       </article>
     </div>
 
