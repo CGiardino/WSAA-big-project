@@ -601,28 +601,33 @@
       </tbody>
     </table>
 
-    <div class="plot-grid" *ngIf="statisticsPlots.length > 0">
-      <figure
-        class="plot-card"
-        *ngFor="let plot of statisticsPlots"
-        role="button"
-        tabindex="0"
-        (click)="openPlotModal(plot)"
-        (keydown.enter)="openPlotModal(plot)"
-        (keydown.space)="openPlotModal(plot); $event.preventDefault()"
-      >
-        <img *ngIf="getPlotImageUrl(plot.name) as plotImageUrl" [src]="plotImageUrl" [alt]="getPlotLabel(plot.name)" loading="lazy" />
-        <span class="plot-open-indicator" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="16" height="16" focusable="false">
-            <path d="M15 3h6v6M21 3l-8 8M9 21H3v-6M3 21l8-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </span>
-        <p class="muted" *ngIf="!getPlotImageUrl(plot.name) && !hasPlotLoadError(plot.name)">Loading plot...</p>
-        <p class="error muted" *ngIf="hasPlotLoadError(plot.name)">Plot unavailable</p>
-        <figcaption>{{ getPlotLabel(plot.name) }}</figcaption>
-      </figure>
-    </div>
-    <p *ngIf="!statisticsLoading && statisticsPlots.length === 0" class="muted">No generated plots found.</p>
+    <details *ngIf="!statisticsLoading" class="statistics-plots-section" open>
+      <summary><strong>Neural Network Training Statistics</strong></summary>
+
+      <div class="plot-grid" *ngIf="statisticsPlots.length > 0">
+        <figure
+          class="plot-card"
+          *ngFor="let plot of statisticsPlots"
+          role="button"
+          tabindex="0"
+          (click)="openPlotModal(plot)"
+          (keydown.enter)="openPlotModal(plot)"
+          (keydown.space)="openPlotModal(plot); $event.preventDefault()"
+        >
+          <img *ngIf="getPlotImageUrl(plot.name) as plotImageUrl" [src]="plotImageUrl" [alt]="getPlotLabel(plot.name)" loading="lazy" />
+          <span class="plot-open-indicator" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="16" height="16" focusable="false">
+              <path d="M15 3h6v6M21 3l-8 8M9 21H3v-6M3 21l8-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <p class="muted" *ngIf="!getPlotImageUrl(plot.name) && !hasPlotLoadError(plot.name)">Loading plot...</p>
+          <p class="error muted" *ngIf="hasPlotLoadError(plot.name)">Plot unavailable</p>
+          <figcaption>{{ getPlotLabel(plot.name) }}</figcaption>
+        </figure>
+      </div>
+
+      <p *ngIf="statisticsPlots.length === 0" class="muted">No generated plots found.</p>
+    </details>
   </section>
 
   <div class="image-modal-backdrop" *ngIf="selectedPlotName" (click)="onPlotBackdropClick($event)">

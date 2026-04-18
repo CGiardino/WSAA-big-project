@@ -518,6 +518,19 @@ form.grid button {
   margin-top: 12px;
 }
 
+.statistics-plots-section {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: 1px solid #e2e7f3;
+  border-radius: 10px;
+  background: #fcfdff;
+}
+
+.statistics-plots-section > summary {
+  cursor: pointer;
+  padding: 2px 0;
+}
+
 .plot-card {
   margin: 0;
   border: 1px solid #e2e7f3;
