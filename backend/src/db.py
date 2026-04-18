@@ -9,73 +9,16 @@ import time
 
 # External dependency for Azure SQL connection
 from mssql_python import connect
-
-# SQL statement to create applicants table if it doesn't exist
-CREATE_APPLICANTS_SQL = '''
-IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='applicants' AND xtype='U')
-BEGIN
-    CREATE TABLE applicants (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        age INT NOT NULL,
-        sex NVARCHAR(10) NOT NULL,
-        bmi FLOAT NOT NULL,
-        children INT NOT NULL,
-        smoker NVARCHAR(10) NOT NULL,
-        region NVARCHAR(50) NOT NULL,
-        created_at NVARCHAR(32) NOT NULL,
-        updated_at NVARCHAR(32) NOT NULL
-    )
-END
-'''
-
-# SQL statement to create applicant_evaluations table if it doesn't exist
-CREATE_EVALUATIONS_SQL = '''
-IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='applicant_evaluations' AND xtype='U')
-BEGIN
-    CREATE TABLE applicant_evaluations (
-        id INT IDENTITY(1,1) PRIMARY KEY,
-        evaluation_id NVARCHAR(64) NOT NULL UNIQUE,
-        applicant_id INT NOT NULL,
-        risk_category NVARCHAR(20) NOT NULL,
-        model_version NVARCHAR(32) NOT NULL,
-        created_at NVARCHAR(32) NOT NULL,
-        FOREIGN KEY(applicant_id) REFERENCES applicants(id)
-    )
-END
-'''
-
-# SQL statement to create training_runs table if it doesn't exist
-CREATE_TRAINING_RUNS_SQL = '''
-IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='training_runs' AND xtype='U')
-BEGIN
-    CREATE TABLE training_runs (
-        run_id NVARCHAR(64) PRIMARY KEY,
-        status NVARCHAR(32) NOT NULL,
-        epochs INT,
-        model_version NVARCHAR(32),
-        classification_report NVARCHAR(MAX),
-        started_at NVARCHAR(32),
-        finished_at NVARCHAR(32),
-        last_error NVARCHAR(255)
-    )
-END
-'''
-
-# SQL to add classification_report column if missing (for schema migration)
-ALTER_TRAINING_RUNS_ADD_CLASSIFICATION_REPORT_SQL = '''
-IF COL_LENGTH('training_runs', 'classification_report') IS NULL
-BEGIN
-    ALTER TABLE training_runs
-    ADD classification_report NVARCHAR(MAX) NULL
-END
-'''
+from src.health_insurance_risk_classifier import build_dataset, persist_dataset
+from src.storage.dao import StorageDAO
+from src.schema import STARTUP_SCHEMA_STATEMENTS
 
 def get_db_backend():
     """Return the type of DB backend in use (for future extensibility)."""
     return "azuresql"
 
 def _get_connection_string() -> str:
-    """Fetch the Azure SQL connection string from environment variable."""
+    """Fetch the Azure SQL connection string from the environment variable."""
     connection_string = os.getenv("WSAA_DB_CONNECTION_STRING")
     if not connection_string:
         raise ValueError("WSAA_DB_CONNECTION_STRING is required for Azure SQL backend.")
@@ -112,24 +55,13 @@ def get_connection():
     raise last_exception if last_exception else RuntimeError("Failed to connect to Azure SQL after retries.")
 
 def _seed_health_insurance_data_if_empty() -> None:
-    """Populate analytics table from CSV if it exists and table is empty."""
-    # Lazy import avoids circular dependency between db <-> classifier/repositories.
-    from src.health_insurance_risk_classifier import build_dataset, persist_dataset
-    from src.storage.dao import StorageDAO
-    
+    """Populate the analytics table from CSV if it exists and the table is empty."""
     conn = get_connection()
     try:
-        # Check if table exists and is empty
-        cursor = conn.execute(
-            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'health_insurance_with_risk'"
-        )
-        table_exists = cursor.fetchone()[0] > 0
-
-        if table_exists:
-            cursor = conn.execute("SELECT COUNT(*) FROM [health_insurance_with_risk]")
-            row_count = cursor.fetchone()[0]
-            if row_count > 0:
-                return  # Table already populated
+        cursor = conn.execute("SELECT COUNT(*) FROM [health_insurance_with_risk]")
+        row_count = cursor.fetchone()[0]
+        if row_count > 0:
+            return  # Table already populated
         
         # Download CSV from Azure Blob Storage and populate table
         try:
@@ -145,7 +77,7 @@ def _seed_health_insurance_data_if_empty() -> None:
             # Seeding is optional; skip when dataset is not available yet.
             return
     except Exception as e:
-        # Log but don't fail startup if seeding fails
+        # Log but don't fail to start up if seeding fails
         print(f"Warning: Could not seed health_insurance_with_risk data: {e}")
     finally:
         conn.close()
@@ -155,10 +87,8 @@ def ensure_schema_on_startup() -> None:
     conn = get_connection()
     try:
         with conn.cursor() as cursor:
-            cursor.execute(CREATE_APPLICANTS_SQL)
-            cursor.execute(CREATE_EVALUATIONS_SQL)
-            cursor.execute(CREATE_TRAINING_RUNS_SQL)
-            cursor.execute(ALTER_TRAINING_RUNS_ADD_CLASSIFICATION_REPORT_SQL)
+            for statement in STARTUP_SCHEMA_STATEMENTS:
+                cursor.execute(statement)
     finally:
         conn.close()
     # Try to seed the analytics data table if CSV exists
