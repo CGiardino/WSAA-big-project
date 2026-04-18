@@ -426,6 +426,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.applicantSearchId = normalizedId;
     this.applicantSearching = true;
     this.applicantError = '';
+    this.latestApplicantCreateResult = null;
 
     this.api.getApplicantById(normalizedId).subscribe({
       next: (applicant) => {
