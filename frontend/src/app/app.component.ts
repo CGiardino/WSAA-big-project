@@ -197,8 +197,8 @@ export class AppComponent implements OnInit, OnDestroy {
     if (syncHash) {
       this.updateHashForTab(tab);
     }
-    if (tab === 'statistics' && this.statisticsSummary === null && !this.statisticsLoading) {
-      // Lazy-load statistics only when the tab is first opened.
+    if (tab === 'statistics' && !this.statisticsLoading) {
+      // Refresh on each tab switch so cards/table reflect latest backend state.
       this.loadStatistics();
     }
     if (tab === 'training' && this.trainingDataset.length === 0) {
