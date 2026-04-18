@@ -26,83 +26,83 @@ class StatisticsDAO:
         Returns:
             Dictionary with total_records, avg_age, avg_bmi, avg_charges, risk_distribution
         """
-        summary_row = None
-        risk_rows = []
+        live_summary: dict[str, Any] | None = None
+        avg_charges = 0.0
 
+        # Real-time summary from operational applicant/evaluation tables.
         with get_connection() as conn:
             try:
-                # Check if table exists
-                with conn.cursor() as cursor:
-                    cursor.execute(
-                        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'health_insurance_with_risk'"
-                    )
-                    table_exists = cursor.fetchone()[0] > 0
-
-                if not table_exists:
-                    raise ValueError("health_insurance_with_risk table not found")
-
-                # Get available columns to handle schema variations
                 with conn.cursor() as cursor:
                     cursor.execute(
                         """
-                        SELECT COLUMN_NAME
-                        FROM INFORMATION_SCHEMA.COLUMNS
-                        WHERE TABLE_NAME = 'health_insurance_with_risk'
-                        ORDER BY ORDINAL_POSITION
-                        """
-                    )
-                    column_rows = cursor.fetchall()
-
-                table_columns = {str(row[0]) for row in column_rows}
-                if not table_columns:
-                    raise ValueError("health_insurance_with_risk table has no columns")
-
-                # Pick columns defensively because historical tables may differ.
-                age_column = "age_original" if "age_original" in table_columns else "age"
-                bmi_column = "bmi_original" if "bmi_original" in table_columns else "bmi"
-
-                # Execute summary query
-                with conn.cursor() as cursor:
-                    query = f"""
                         SELECT
                             COUNT(*) AS total_records,
-                            COALESCE(AVG(CAST([{age_column}] AS FLOAT)), 0.0) AS avg_age,
-                            COALESCE(AVG(CAST([{bmi_column}] AS FLOAT)), 0.0) AS avg_bmi,
-                            COALESCE(AVG(CAST([charges_original] AS FLOAT)), 0.0) AS avg_charges
-                        FROM [health_insurance_with_risk]
+                            COALESCE(AVG(CAST(a.age AS FLOAT)), 0.0) AS avg_age,
+                            COALESCE(AVG(CAST(a.bmi AS FLOAT)), 0.0) AS avg_bmi
+                        FROM applicants a
                         """
-                    cursor.execute(query)
-                    summary_row = cursor.fetchone()
+                    )
+                    row = cursor.fetchone()
 
-                # Execute risk distribution query
                 with conn.cursor() as cursor:
                     cursor.execute(
                         """
-                        SELECT [risk_category], COUNT(*) AS count
-                        FROM [health_insurance_with_risk]
-                        GROUP BY [risk_category]
+                        -- For each applicant, keep only the most recent evaluation row.
+                        WITH latest_eval AS (
+                            SELECT applicant_id, risk_category,
+                                   ROW_NUMBER() OVER (PARTITION BY applicant_id ORDER BY id DESC) AS rn
+                            FROM applicant_evaluations
+                        )
+                        -- Count applicants by current (latest) risk category.
+                        SELECT risk_category, COUNT(*)
+                        FROM latest_eval
+                        WHERE rn = 1
+                        GROUP BY risk_category
                         """
                     )
                     risk_rows = cursor.fetchall()
 
+                risk_counts = {"Low": 0, "Medium": 0, "High": 0}
+                for risk_row in risk_rows:
+                    label = str(risk_row[0])
+                    if label in risk_counts:
+                        risk_counts[label] = int(risk_row[1])
+
+                live_summary = {
+                    "total_records": int(row[0] if row is not None else 0),
+                    "avg_age": float(row[1] if row is not None else 0.0),
+                    "avg_bmi": float(row[2] if row is not None else 0.0),
+                    "risk_distribution": risk_counts,
+                }
             except Exception:
-                summary_row = None
-                risk_rows = []
+                live_summary = None
 
-        risk_counts = {"Low": 0, "Medium": 0, "High": 0}
-        for row in risk_rows:
-            # Ignore unknown labels so API payload remains schema-compatible.
-            label = str(row[0])
-            if label in risk_counts:
-                risk_counts[label] = int(row[1])
+        # Keep avg_charges populated from analytics dataset when available.
+        with get_connection() as conn:
+            try:
+                with conn.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        SELECT COALESCE(AVG(CAST([charges_original] AS FLOAT)), 0.0) AS avg_charges
+                        FROM [health_insurance_with_risk]
+                        """
+                    )
+                    avg_row = cursor.fetchone()
+                avg_charges = float(avg_row[0] if avg_row is not None else 0.0)
+            except Exception:
+                avg_charges = 0.0
 
-        return {
-            "total_records": int(summary_row[0] if summary_row is not None else 0),
-            "avg_age": float(summary_row[1] if summary_row is not None else 0.0),
-            "avg_bmi": float(summary_row[2] if summary_row is not None else 0.0),
-            "avg_charges": float(summary_row[3] if summary_row is not None else 0.0),
-            "risk_distribution": risk_counts,
-        }
+        if live_summary is None:
+            return {
+                "total_records": 0,
+                "avg_age": 0.0,
+                "avg_bmi": 0.0,
+                "avg_charges": avg_charges,
+                "risk_distribution": {"Low": 0, "Medium": 0, "High": 0},
+            }
+
+        live_summary["avg_charges"] = avg_charges
+        return live_summary
 
     def list_plots(self) -> list[dict[str, str]]:
         """
