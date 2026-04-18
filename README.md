@@ -1,65 +1,101 @@
 # WSAA-big-project
-For the Web Services and Applications Big Project, I extended my previous proof of concept, "Health Insurance Risk Classifier", developed for the Programming for Data Analytics course (link to repo: https://github.com/CGiardino/programming-for-data-analytics/tree/main/project).
+Health Insurance Risk Classifier web app for the Web Services and Applications project.
 
-The original project focused on data analysis and a neural network model for classifying individuals into insurance risk categories. For this module, I evolved it into a full web-based application with APIs, data persistence, and cloud deployment.
+## Business Functionality
+- `Risk Evaluation`: fast pre-assessment for a single person using age, sex, BMI, children, and smoker status; returns a Low/Medium/High risk category and model version used.
+- `Applicants`: operational applicant management (create, list, search by ID, edit, delete) with risk evaluations attached, so teams can manage and review customer records in one place.
+- `Statistics`: portfolio-level insight for decision support, including summary KPIs (records, average age/BMI/charges), risk distribution, and analytics plots.
+- `Training`: model operations tab to retrain the classifier, monitor run status and model version, view classification report metrics, and inspect training dataset rows.
 
-[See System Architecture Overview](SYSTEM_ARCHITECTURE.md)
+## Quick Start (Docker Compose)
 
-## Quick Start
+Run the full local stack with one command:
 
-To start the backend, you must set both `WSAA_DB_CONNECTION_STRING` and `WSAA_AZURE_STORAGE_CONNECTION_STRING` environment variables. These are required for the backend to connect to the local Azure SQL and Azure Storage.
-To start them locally, you can use Docker emulators:
+```bash
+docker compose up --build
+```
 
-1. Start local Azure SQL and Azure Storage emulators using Docker, and set environment variables (these must be running for local development):
-   ```bash
-   # Start Azure SQL
-   docker run -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=Your_password123' -p 1433:1433 -d mcr.microsoft.com/mssql/server:2022-latest
-   export WSAA_DB_CONNECTION_STRING='mssql+pyodbc://sa:Your_password123@localhost:1433/tempdb?driver=ODBC+Driver+18+for+SQL+Server'
+This starts SQL Server, Azurite, backend, frontend, CSV seeding, and first-run model bootstrap.
 
-   # Start Azure Storage Emulator (Azurite)
-   docker run -p 10000:10000 -p 10001:10001 -p 10002:10002 mcr.microsoft.com/azure-storage/azurite
-   export WSAA_AZURE_STORAGE_CONNECTION_STRING='DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFeqCnf2P==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;'
-
-
-   ```
-   - [Official docs: SQL Server on Docker](https://learn.microsoft.com/en-us/sql/linux/quickstart-install-connect-docker)
-   - [Official docs: Azurite (Azure Storage emulator)](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=docker)
-   - Alternatively, you can connect to actual Azure services if you have an Azure subscription, but using local emulators allows for a fully self-contained development environment. 
-
-2. Create and activate a Python virtual environment:
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   ```
-3. Install backend dependencies:
-   ```bash
-   python -m pip install -r backend/requirements.txt
-   ```
-4. Generate Python models and FastAPI stubs from OpenAPI:
-   ```bash
-   ./backend/scripts/generate_openapi_models.sh
-   ```
-5. Generate Angular API client from OpenAPI:
-   ```bash
-   ./frontend/scripts/generate-api-client.sh
-   ```
-6. Start the backend API (requires both environment variables to be set):
-   ```bash
-   cd backend
-   uvicorn src.main:app --reload
-   ```
-7. In a new terminal, start the frontend:
-   ```bash
-   cd frontend
-   npm install
-   npm start
-   ```
+- Architecture: `SYSTEM_ARCHITECTURE.md`
 
 - Frontend: http://localhost:4200
 - Backend API: http://localhost:8000
-- API calls use `/api/*` and are proxied to the backend
+- SQL Server: `localhost:1433`
+- Azurite blob endpoint: `http://localhost:10000`
 
-## Release Deployment (Azure)
+Notes:
+
+- `bootstrap-data` uploads `backend/data/health_insurance_data.csv` to blob storage.
+- `bootstrap-model` triggers training only when no loadable model exists.
+- SQL data is stored in persistent database `hirc` (created automatically by `init-db`).
+- Local Docker auth is disabled:
+  - Backend: `WSAA_AUTH_ENABLED=false`
+  - Frontend: `frontend/src/assets/env.docker.js`
+
+Optional overrides:
+
+```bash
+export WSAA_SQL_SA_PASSWORD='Your_password123'
+export WSAA_SQL_DATABASE='hirc'
+export WSAA_BOOTSTRAP_EPOCHS='200'
+docker compose up --build
+```
+
+## Environment Variables
+
+### Required (backend)
+
+- `WSAA_DB_CONNECTION_STRING`
+- `WSAA_AZURE_STORAGE_CONNECTION_STRING`
+
+### Optional (backend)
+
+- `WSAA_CORS_ORIGINS`
+- `WSAA_AZURE_STORAGE_PREFIX`
+
+### Auth settings (required only when `WSAA_AUTH_ENABLED=true`)
+
+- `WSAA_AUTH_ENABLED`
+- `WSAA_AUTH_TENANT_ID`
+- `WSAA_AUTH_CLIENT_ID`
+- `WSAA_AUTH_AUDIENCE`
+- `WSAA_AUTH_REQUIRED_SCOPE`
+- `WSAA_AUTH_ALLOWED_ISSUERS`
+
+### Frontend runtime config
+
+- `frontend/src/assets/env.js`
+  - `apiBaseUrl`
+  - `auth.enabled`
+  - `auth.tenantId`
+  - `auth.clientId`
+  - `auth.apiScope`
+
+## Local Dev (without Compose)
+
+Use this path only if you do not want Docker Compose.
+
+```bash
+# backend
+python -m pip install -r backend/requirements.txt
+cd backend
+uvicorn src.main:app --reload
+```
+
+```bash
+# frontend (new terminal)
+cd frontend
+npm install
+npm start
+```
+
+If you change `backend/openapi.yaml`, regenerate clients/stubs:
+
+```bash
+./backend/scripts/generate_openapi_models.sh
+./frontend/scripts/generate-api-client.sh
+```
 
 - Backend container image is built from `backend/Dockerfile` and pushed by `azure-pipelines.yml`.
 - Backend is deployed to Azure Container Apps using `az containerapp update`.
@@ -73,4 +109,7 @@ To start them locally, you can use Docker emulators:
   - `azureStaticWebAppsApiToken`
 - For frontend API target, set `frontend/src/assets/env.js` `apiBaseUrl` to your Container App URL for release.
 
-Additional: [See Project Plan](PROJECT_PLAN.md)
+- Backend image: `backend/Dockerfile` (pipeline: `azure-pipelines.yml`)
+- Backend deploy target: Azure Container Apps
+- Frontend deploy target: Azure Static Web Apps
+- Set pipeline secrets/variables before release (`WSAA_DB_CONNECTION_STRING`, `WSAA_AZURE_STORAGE_CONNECTION_STRING`, auth vars, `azureStaticWebAppsApiToken`)

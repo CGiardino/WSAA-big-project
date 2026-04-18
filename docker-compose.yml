@@ -1,0 +1,138 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-CU14-ubuntu-22.04
+    platform: ${WSAA_DOCKER_PLATFORM:-linux/amd64}
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${WSAA_SQL_SA_PASSWORD:-Your_password123}
+    ports:
+      - "1433:1433"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $$MSSQL_SA_PASSWORD -C -Q 'SELECT 1'",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:3.31.0
+    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --skipApiVersionCheck
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const s=require('net').createConnection(10000,'127.0.0.1');s.on('connect',()=>process.exit(0));s.on('error',()=>process.exit(1));\"",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    volumes:
+      - azurite-data:/data
+
+  init-db:
+    image: mcr.microsoft.com/mssql/server:2022-CU14-ubuntu-22.04
+    platform: ${WSAA_DOCKER_PLATFORM:-linux/amd64}
+    restart: "no"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: ${WSAA_SQL_SA_PASSWORD:-Your_password123}
+      WSAA_SQL_DATABASE: ${WSAA_SQL_DATABASE:-hirc}
+    command:
+      [
+        "sh",
+        "-c",
+        "/opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"IF DB_ID(N'$$WSAA_SQL_DATABASE') IS NULL CREATE DATABASE [$$WSAA_SQL_DATABASE]\"",
+      ]
+
+  bootstrap-data:
+    build:
+      context: ./backend
+    platform: ${WSAA_DOCKER_PLATFORM:-linux/amd64}
+    command: ["python", "/app/scripts/bootstrap_local_stack.py", "seed-data"]
+    restart: "no"
+    depends_on:
+      azurite:
+        condition: service_healthy
+    environment:
+      WSAA_AZURE_STORAGE_CONNECTION_STRING: DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=${WSAA_AZURITE_ACCOUNT_KEY:-Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==};BlobEndpoint=http://azurite:10000/devstoreaccount1;
+      WSAA_BOOTSTRAP_DATA_PATH: /app/data/health_insurance_data.csv
+
+  backend:
+    build:
+      context: ./backend
+    platform: ${WSAA_DOCKER_PLATFORM:-linux/amd64}
+    ports:
+      - "8000:80"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      init-db:
+        condition: service_completed_successfully
+      azurite:
+        condition: service_healthy
+      bootstrap-data:
+        condition: service_completed_successfully
+    environment:
+      WSAA_DB_CONNECTION_STRING: Server=sqlserver,1433;Database=${WSAA_SQL_DATABASE:-hirc};UID=sa;PWD=${WSAA_SQL_SA_PASSWORD:-Your_password123};Encrypt=yes;TrustServerCertificate=yes
+      WSAA_AZURE_STORAGE_CONNECTION_STRING: DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=${WSAA_AZURITE_ACCOUNT_KEY:-Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==};BlobEndpoint=http://azurite:10000/devstoreaccount1;
+      WSAA_AUTH_ENABLED: "false"
+      WSAA_CORS_ORIGINS: http://localhost:4200
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:80/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  bootstrap-model:
+    build:
+      context: ./backend
+    platform: ${WSAA_DOCKER_PLATFORM:-linux/amd64}
+    command: ["python", "/app/scripts/bootstrap_local_stack.py", "ensure-model"]
+    restart: "no"
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      WSAA_BOOTSTRAP_API_URL: http://backend:80
+      WSAA_BOOTSTRAP_EPOCHS: ${WSAA_BOOTSTRAP_EPOCHS:-200}
+
+  frontend:
+    build:
+      context: ./frontend
+    command:
+      [
+        "sh",
+        "-c",
+        "cp src/assets/env.docker.js src/assets/env.js && npm run start -- --host 0.0.0.0 --port 4200 --proxy-config proxy.conf.docker.json",
+      ]
+    ports:
+      - "4200:4200"
+    depends_on:
+      backend:
+        condition: service_healthy
+      bootstrap-model:
+        condition: service_completed_successfully
+
+volumes:
+  sqlserver-data:
+  azurite-data:
+
+
+
+
+
