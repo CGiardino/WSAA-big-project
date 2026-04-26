@@ -88,9 +88,8 @@ def run_training_job(
         logger.error(error_msg, exc_info=True)
         raise HTTPException(status_code=500, detail=error_msg) from exc
     
-    plots_dir = Path(__file__).resolve().parents[2] / "plots"
-    plots_dir.mkdir(parents=True, exist_ok=True)
-    logger.info(f"Using plots directory: {plots_dir}")
+    # Plot artifacts are uploaded to blob storage; keep any transient files in the run temp directory.
+    logger.info("Using temporary run directory for transient plot operations: %s", temp_dir)
 
     # Save initial status
     run_status: dict[str, object | None] = {
@@ -128,12 +127,12 @@ def run_training_job(
         logger.info(f"Analysis data loaded: {len(df_analysis)} rows")
         
         logger.info("Running exploratory data analysis")
-        run_eda(df_analysis, plots_dir)
+        run_eda(df_analysis, temp_dir)
         logger.info("EDA completed, plots generated")
         
         logger.info(f"Starting model training with {epochs} epochs")
         trained_model_version, classification_report = run_training(
-            plot_dir=plots_dir,
+            plot_dir=temp_dir,
             epochs=epochs,
         )
         logger.info(f"Model training completed: {trained_model_version}")
