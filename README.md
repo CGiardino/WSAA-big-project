@@ -74,7 +74,7 @@ docker compose up --build
 
 ## Local Dev (without Compose)
 
-Use this path only if you do not want Docker Compose.
+Use this section only if you do not want Docker Compose.
 
 ```bash
 # backend
@@ -113,3 +113,40 @@ If you change `backend/openapi.yaml`, regenerate clients/stubs:
 - Backend deploy target: Azure Container Apps
 - Frontend deploy target: Azure Static Web Apps
 - Set pipeline secrets/variables before release (`WSAA_DB_CONNECTION_STRING`, `WSAA_AZURE_STORAGE_CONNECTION_STRING`, auth vars, `azureStaticWebAppsApiToken`)
+
+## CI/CD Pipeline (Azure DevOps)
+
+- Automated builds and deployments are managed via Azure DevOps.
+- On each push or pull request:
+  - Backend Docker image is built and pushed to Azure Container Registry.
+  - Backend is deployed to Azure Container Apps.
+  - Frontend is built and deployed to Azure Static Web Apps.
+- Pipeline configuration: [`azure-pipelines.yml`](azure-pipelines.yml)
+- Required pipeline secrets/variables:
+  - `dockerRegistryServiceConnection`
+  - `azureServiceConnection`
+  - `acrLoginServer`
+  - `resourceGroup`
+  - `containerAppName`
+  - `azureStaticWebAppsApiToken`
+  - `WSAA_DB_CONNECTION_STRING`
+  - `WSAA_AZURE_STORAGE_CONNECTION_STRING`
+  - (auth variables if enabled)
+
+## Application Screenshots
+
+### Risk Evaluation Tab
+![Risk Evaluation Screenshot](docs/screenshots/risk_evaluation.jpg)
+_Evaluate individual risk using age, sex, BMI, children, and smoker status._
+
+### Applicants Tab
+![Applicants Screenshot](docs/screenshots/applicants.jpg)
+_Manage applicants: create, search, edit, delete, and view risk evaluations._
+
+### Statistics Tab
+![Statistics Screenshot](docs/screenshots/statistics.jpg)
+_See portfolio-level KPIs, risk distribution, and analytics plots._
+
+### Training Tab
+![Training Screenshot](docs/screenshots/training.jpg)
+_Trigger model retraining, monitor status, and inspect training data._
