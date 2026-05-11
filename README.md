@@ -1,11 +1,22 @@
 # WSAA-big-project
-Health Insurance Risk Classifier web app for the Web Services and Applications project.
+Health Insurance Risk Classifier web app for the Web Services and Applications project. 
+
+This project uses a neural network trained on health insurance data to predict risk categories (Low/Medium/High) based on applicant features like age, BMI, smoking status, and more. It's a supervised classification model designed to support fast risk assessment and portfolio analytics.
 
 ## Business Functionality
 - `Risk Evaluation`: fast pre-assessment for a single person using age, sex, BMI, children, and smoker status; returns a Low/Medium/High risk category and model version used.
 - `Applicants`: operational applicant management (create, list, search by ID, edit, delete) with risk evaluations attached, so teams can manage and review customer records in one place.
 - `Statistics`: portfolio-level insight for decision support, including summary KPIs (records, average age/BMI/charges), risk distribution, and analytics plots.
 - `Training`: model operations tab to retrain the classifier, monitor run status and model version, view classification report metrics, and inspect training dataset rows.
+
+## Tech Stack
+
+**Backend**: FastAPI (Python)
+**ML/Data Science**: TensorFlow/Keras (neural networks), scikit-learn (ML utilities), pandas (data processing), numpy (numerical computing), matplotlib/seaborn (visualization)
+**Database**: Azure SQL (mssql-python)
+**Storage**: Azure Blob Storage
+**Frontend**: Angular, TypeScript
+**Infrastructure**: Docker, Docker Compose, Azure Container Apps, Azure Static Web Apps, Azurite (local development)
 
 ## Quick Start (Docker Compose)
 
