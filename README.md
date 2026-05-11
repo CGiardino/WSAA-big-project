@@ -1,7 +1,9 @@
 # WSAA-big-project
 Health Insurance Risk Classifier web app for the Web Services and Applications project. 
 
-This project uses a neural network trained on health insurance data to predict risk categories (Low/Medium/High) based on applicant features like age, BMI, smoking status, and more. It's a supervised classification model designed to support fast risk assessment and portfolio analytics.
+This project uses a neural network trained on health insurance data to predict risk categories (Low/Medium/High) based on applicant features like age, BMI, smoking status, and more. 
+
+It's a supervised classification model designed to support fast risk assessment for health insurance.
 
 ## Business Functionality
 - `Risk Evaluation`: fast pre-assessment for a single person using age, sex, BMI, children, and smoker status; returns a Low/Medium/High risk category and model version used.
@@ -11,12 +13,12 @@ This project uses a neural network trained on health insurance data to predict r
 
 ## Tech Stack
 
-**Backend**: FastAPI (Python)
-**ML/Data Science**: TensorFlow/Keras (neural networks), scikit-learn (ML utilities), pandas (data processing), numpy (numerical computing), matplotlib/seaborn (visualization)
-**Database**: Azure SQL (mssql-python)
-**Storage**: Azure Blob Storage
-**Frontend**: Angular, TypeScript
-**Infrastructure**: Docker, Docker Compose, Azure Container Apps, Azure Static Web Apps, Azurite (local development)
+- Backend: FastAPI (Python)
+- ML/Data Science: TensorFlow/Keras (neural networks), scikit-learn (ML utilities), pandas (data processing), numpy (numerical computing), matplotlib/seaborn (visualization)
+- Database: Azure SQL (mssql-python)
+- Storage: Azure Blob Storage
+- Frontend: Angular, TypeScript
+- Infrastructure: Docker, Docker Compose, Azure Container Apps, Azure Static Web Apps, Azurite (local development)
 
 ## Quick Start (Docker Compose)
 
