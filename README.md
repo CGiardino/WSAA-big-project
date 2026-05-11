@@ -1,7 +1,7 @@
 # WSAA-big-project
 Health Insurance Risk Classifier web app for the Web Services and Applications project. 
 
-This project uses a neural network trained on health insurance data to predict risk categories (Low/Medium/High) based on applicant features like age, BMI, smoking status, and more. 
+This project uses a neural network trained on health insurance data to predict risk categories (Low/Medium/High) based on applicant features like age, sex, BMI, smoking status, and number of children. 
 
 It's a supervised classification model designed to support fast risk assessment for health insurance.
 
